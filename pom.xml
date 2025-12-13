@@ -20,9 +20,25 @@
         <!-- Versions stables et disponibles sur Maven Central -->
         <javacv.version>1.5.11</javacv.version>
         <opencv.version>4.10.0-1.5.11</opencv.version>
+        <exec.mainClass>tech.HTECH.Main</exec.mainClass>
     </properties>
 
+
+
     <dependencies>
+         <!-- SparkJava (Serveur HTTP pour l'API) -->
+        <dependency>
+            <groupId>com.sparkjava</groupId>
+            <artifactId>spark-core</artifactId>
+            <version>2.9.4</version>
+        </dependency>
+
+        <!-- Gson (Manipulation JSON) -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
+        </dependency>
 
         <!-- OpenCV complet (inclut les bindings Java + natives pour toutes les plateformes) -->
         <dependency>
@@ -106,7 +122,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.1.0</version>
                 <configuration>
-                    <mainClass>tech.HTECH.Main</mainClass>
+                    <mainClass>${exec.mainClass}</mainClass>
                     <cleanupDaemonThreads>false</cleanupDaemonThreads>
                 </configuration>
             </plugin>

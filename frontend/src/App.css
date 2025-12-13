@@ -1,0 +1,207 @@
+/* Reset global */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Body */
+body {
+  margin: 0;
+  font-family: "Poppins", Arial, sans-serif;
+  background: #020817;
+  color: white;
+}
+
+/* Boutons globaux */
+button {
+  padding: 10px 20px;
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+button:hover {
+  background-color: #3730a3;
+}
+
+/* Header fixe */
+.header {
+  width: 100vw;
+  padding: 20px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: rgba(2, 8, 23, 0.85);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 20px rgba(78, 170, 255, 0.4);
+  z-index: 1000;
+}
+
+/* Conteneur principal (ex: CDV, CV, SV) */
+.cdv-container,
+.cv-container,
+.sv-container,
+.tr-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: calc(100vh - 68px);
+  background: linear-gradient(135deg, #020817, #031b3a);
+  color: white;
+  position: relative;
+  font-family: "Poppins", sans-serif;
+  overflow: hidden;
+  padding: 20px;
+  margin-top: 68px; /* espace pour menu fixe */
+}
+
+/* Zone gauche (texte) */
+.cdv-left,
+.cv-left,
+.sv-left,
+.tr-left {
+  padding: 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.cdv-title,
+.cv-title,
+.sv-title,
+.tr-title {
+  font-size: 38px;
+  font-weight: bold;
+  margin-bottom: 25px;
+  text-shadow: 0 0 10px #4a8cff;
+}
+
+.cdv-left h2,
+.cv-left h2,
+.sv-left h2,
+.tr-left h2 {
+  margin-bottom: 10px;
+  color: #7ab8ff;
+  text-shadow: 0 0 6px rgba(122, 184, 255, 0.7);
+}
+
+.cdv-left p,
+.cv-left p,
+.sv-left p,
+.tr-left p {
+  font-size: 18px;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.cdv-left ul,
+.cv-left ul,
+.sv-left ul,
+.tr-left ul {
+  margin-top: 15px;
+  padding-left: 20px;
+}
+
+.cdv-left li,
+.cv-left li,
+.sv-left li,
+.tr-left li {
+  margin-bottom: 10px;
+  font-size: 17px;
+}
+
+/* Zone droite (image + bouton) */
+.cdv-right,
+.cv-right,
+.sv-right,
+.tr-right {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-bottom: 30px;
+}
+
+.cdv-image,
+.cv-image-overlay,
+.sv-image-overlay,
+.tr-image-overlay {
+  width: 90%;
+  height: 85%;
+  background-size: cover;
+  background-position: center;
+  border-radius: 20px;
+  box-shadow: 0 0 25px rgba(0, 90, 255, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: flex-end; /* bouton en bas */
+  animation: fadeIn 1.5s ease-in-out;
+  padding-bottom: 20px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Bouton Commencer */
+.cdv-start,
+.cv-start,
+.sv-start,
+.tr-start {
+  margin-bottom: 20px;
+  width: 200px;
+  padding: 16px 0;
+  font-size: 20px;
+  font-weight: bold;
+  background: rgba(0, 80, 255, 0.75);
+  border: none;
+  color: white;
+  border-radius: 50px;
+  cursor: pointer;
+  backdrop-filter: blur(3px);
+  box-shadow: 0 0 15px rgba(0, 110, 255, 0.8);
+  text-align: center;
+  transition: 0.3s ease;
+}
+
+.cdv-start:hover,
+.cv-start:hover,
+.sv-start:hover,
+.tr-start:hover {
+  transform: scale(1.08);
+  background: rgba(0, 110, 255, 0.9);
+}
+
+/* Bouton Retour */
+.cdv-back,
+.cv-back,
+.sv-back,
+.tr-back {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(0, 70, 180, 0.7);
+  padding: 10px 20px;
+  border: none;
+  color: white;
+  border-radius: 10px;
+  font-size: 16px;
+  box-shadow: 0 0 10px rgba(0, 90, 255, 0.5);
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.cdv-back:hover,
+.cv-back:hover,
+.sv-back:hover,
+.tr-back:hover {
+  background: rgba(0, 70, 180, 1);
+  transform: scale(1.05);
+}
