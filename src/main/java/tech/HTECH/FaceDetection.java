@@ -6,19 +6,21 @@ import org.bytedeco.opencv.global.opencv_imgproc;
 import org.bytedeco.opencv.global.opencv_imgcodecs;
 
 public class FaceDetection {
-    private static int cpt=1;
+    private static int cpt = 1;
+
     public static Mat detectFace(String imagePath) {
         // Charger le classifieur Haar cascade frontal face
         String xmlPath = "src/main/resources/haarcascade_frontalface_default.xml";
         if (!new java.io.File(xmlPath).exists()) {
-             System.err.println("ERREUR: Le fichier Haar Cascade est introuvable à : " + xmlPath);
-             return null;
+            System.err.println("ERREUR: Le fichier Haar Cascade est introuvable à : " + xmlPath);
+            return null;
         }
         CascadeClassifier faceDetector = new CascadeClassifier(xmlPath);
 
         // Lire l'image
         Mat image = opencv_imgcodecs.imread(imagePath);
-        if (image.empty()) return null;
+        if (image.empty())
+            return null;
 
         // Convertir en gris
         Mat gray = new Mat();
@@ -28,7 +30,8 @@ public class FaceDetection {
         RectVector faces = new RectVector();
         faceDetector.detectMultiScale(gray, faces);
 
-        if (faces.size() == 0) return null;
+        if (faces.size() == 0)
+            return null;
 
         // Trouver le visage avec la plus grande dimension (largeur * hauteur)
         Rect largestFace = faces.get(0);
@@ -50,9 +53,11 @@ public class FaceDetection {
         Mat face = new Mat(image, largestFace);
 
         // Sauvegarder l'image annotée (facultatif)
-        opencv_imgcodecs.imwrite("C:/Users/HP/Desktop/TNI/CompFaceModule/resultat_face_detected"+cpt+".jpg", image);
-        cpt++;
-        System.out.println("Visage détecté et entouré d'un rectangle. Image sauvegardée sous 'resultat_face_detected.jpg'");
+        // opencv_imgcodecs.imwrite("C:/Users/HP/Desktop/TNI/CompFaceModule/resultat_face_detected"+cpt+".jpg",
+        // image);
+        // cpt++;
+        // System.out.println("Visage détecté et entouré d'un rectangle. Image
+        // sauvegardée sous 'resultat_face_detected.jpg'");
 
         return face;
     }

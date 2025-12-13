@@ -83,9 +83,10 @@ public class FaceAnalyzer {
 
         // Sauvegarde de l'image annotée
         // Sauvegarde de l'image annotée
-        String desktopPath = System.getProperty("user.home") + "/Desktop/TNI/CompFaceModule/resultat_analyse.jpg";
-        opencv_imgcodecs.imwrite(desktopPath, image);
-        System.out.println("Image analysée sauvegardée sous : " + desktopPath);
+        // String desktopPath = System.getProperty("user.home") +
+        // "/Desktop/TNI/CompFaceModule/resultat_analyse.jpg";
+        // opencv_imgcodecs.imwrite(desktopPath, image);
+        // System.out.println("Image analysée sauvegardée sous : " + desktopPath);
 
         return results;
     }
