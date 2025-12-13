@@ -19,13 +19,17 @@ public class FaceFeature {
 
     @Override
     public String toString() {
-        return "FaceFeatures{" +
-                "faceWidth=" + faceWidth +
-                ", faceHeight=" + faceHeight +
-                ", eyeDistance=" + eyeDistance +
-                ", mouthWidth=" + mouthWidth +
-                ", mouthHeight=" + mouthHeight +
-                '}';
+        return String.format(
+                "\n" +
+                        "   ╔════════════════════════════════════════╗\n" +
+                        "   ║       CARACTÉRISTIQUES DU VISAGE       ║\n" +
+                        "   ╠══════════════════════════╦═════════════╣\n" +
+                        "   ║  Largeur Visage          ║  %4d px   ║\n" +
+                        "   ║  Hauteur Visage          ║  %4d px   ║\n" +
+                        "   ║  Distance Yeux           ║  %4d px   ║\n" +
+                        "   ║  Largeur Bouche          ║  %4d px   ║\n" +
+                        "   ║  Hauteur Bouche          ║  %4d px   ║\n" +
+                        "   ╚══════════════════════════╩═════════════╝",
+                faceWidth, faceHeight, eyeDistance, mouthWidth, mouthHeight);
     }
 }
-

@@ -240,7 +240,20 @@ public class Main {
                     FaceAnalyzer analyzer = new FaceAnalyzer();
                     List<FaceFeature> results = analyzer.analyzeFace(image);
 
-                    System.out.println(results);
+                    if (results.isEmpty()) {
+                        System.out.println("Aucun visage détecté pour l'analyse.");
+                    } else {
+                        // Trouver le visage le plus grand (le plus pertinent)
+                        FaceFeature largestFace = results.get(0);
+                        for (FaceFeature f : results) {
+                            if (f.faceWidth > largestFace.faceWidth) {
+                                largestFace = f;
+                            }
+                        }
+
+                        System.out.println("\n--- VISAGE PRINCIPAL DÉTECTÉ ---");
+                        System.out.println(largestFace);
+                    }
 
                     break;
             }
