@@ -7,7 +7,6 @@ import org.bytedeco.opencv.global.opencv_imgcodecs;
 import org.bytedeco.opencv.opencv_core.Mat;
 //import org.opencv.imgcodecs.Imgcodecs;
 
-
 import java.awt.Desktop;
 import java.io.File;
 import java.util.List;
@@ -16,31 +15,37 @@ import java.util.Scanner;
 public class Main {
     public static void main(String[] args) {
 
-        //Charger automatiquement les bibliothèques natives OpenCV
-        //Loader.load(opencv_core.class);
+        // Charger automatiquement les bibliothèques natives OpenCV
+        // Loader.load(opencv_core.class);
 
-
+        // Instancier Scanner une seule fois
+        Scanner sc = new Scanner(System.in);
         System.out.println("OPTIONS");
-        while(true)
-        {
+
+        while (true) {
             Loader.load(opencv_core.class);
 
-            Scanner sc = new Scanner(System.in);
-            System.out.println("1-Comparer deux visages\n2-Comparer un visage aux visages de la bdd\n3-Temps Réel avec un visage de votre choix\n4-Caractéristiques d'un visage\nChoix:");
-            int choix  = sc.nextInt();
+            System.out.println(
+                    "\n1-Comparer deux visages\n2-Comparer un visage aux visages de la bdd\n3-Temps Réel avec un visage de votre choix\n4-Caractéristiques d'un visage\nChoix:");
 
-            switch(choix)
-            {
+            // Gestion erreur entrée non entière
+            if (!sc.hasNextInt()) {
+                sc.next(); // consomer l'entrée invalide
+                continue;
+            }
+            int choix = sc.nextInt();
+            sc.nextLine(); // Consommer le saut de ligne restant
+
+            switch (choix) {
                 case 1:
                     // --- Image 1 ---
                     Loader.load(opencv_core.class);
 
-                    Scanner s = new Scanner(System.in);
                     System.out.print("Entrez chemin de la première image:");
-                    String imagePath1 = s.nextLine();
+                    String imagePath1 = sc.nextLine();
 
-
-                    //String imagePath1 = "C:/Users/HP/Music/Downloads/img_align_celeba/000003.jpg";
+                    // String imagePath1 =
+                    // "C:/Users/HP/Music/Downloads/img_align_celeba/000003.jpg";
                     Mat face1 = FaceDetection.detectFace(imagePath1);
                     if (face1 != null) {
                         System.out.println("Face de l'image 1 détectée.");
@@ -48,14 +53,15 @@ public class Main {
                         saveAndOpenImage(face1, "face_detected1.jpg");
                     } else {
                         System.out.println("Aucune face détectée dans l'image 1.");
-                        return;
+                        break; // retour au menu
                     }
 
                     // --- Image 2 ---
                     System.out.print("Entrez chemin de la seconde image:");
 
-                    String imagePath2 = s.nextLine();
-                    //String imagePath2 = "C:/Users/HP/Music/Downloads/img_align_celeba/018692.jpg";
+                    String imagePath2 = sc.nextLine();
+                    // String imagePath2 =
+                    // "C:/Users/HP/Music/Downloads/img_align_celeba/018692.jpg";
                     Mat face2 = FaceDetection.detectFace(imagePath2);
                     if (face2 != null) {
                         System.out.println("Face de l'image 2 détectée.");
@@ -63,7 +69,7 @@ public class Main {
                         saveAndOpenImage(face2, "face_detected2.jpg");
                     } else {
                         System.out.println("Aucune face détectée dans l'image 2.");
-                        return;
+                        break;
                     }
 
                     // --- Prétraitement + Histogrammes ---
@@ -84,29 +90,31 @@ public class Main {
 
                     // --- Décision ---
                     double distance = Comparaison.distanceEuclidienne(NfusionA, NfusionB);
-                    if (Decision.dec(distance))
-                        System.out.println("Décision : Même personne");
-                    else
-                        System.out.println("Décision : Personnes différentes");
+                    double cosineSim = Comparaison.similitudeCosinus(NfusionA, NfusionB);
 
-                    System.out.println("Score de compatibilité : "
+                    if (Decision.dec(distance))
+                        System.out.println("Décision (Euclidienne) : Même personne");
+                    else
+                        System.out.println("Décision (Euclidienne) : Personnes différentes");
+
+                    System.out.println("Score de compatibilité (Euclidien) : "
                             + Compatibilite.CalculCompatibilite(distance) + " %");
+
+                    System.out.println("Similarité Cosinus : " + (cosineSim * 100) + " %");
 
                     break;
                 case 2:
-                    Scanner s2 = new Scanner(System.in);
                     System.out.print("Entrez chemin de l'image:");
-                    String imaPath = s2.nextLine();
+                    String imaPath = sc.nextLine();
 
                     String dossier = "src/main/bdd";
 
-                    File[] fichiers = new File(dossier).listFiles((dir, name) ->
-                            name.toLowerCase().matches(".*\\.(jpg|jpeg|png)$")
-                    );
+                    File[] fichiers = new File(dossier)
+                            .listFiles((dir, name) -> name.toLowerCase().matches(".*\\.(jpg|jpeg|png)$"));
 
                     if (fichiers == null || fichiers.length == 0) {
                         System.out.println("Aucune image trouvée dans le dossier.");
-                        return;
+                        break;
                     }
 
                     double meilleurScore = -1; // Plus élevé = meilleure correspondance
@@ -122,7 +130,7 @@ public class Main {
                             saveAndOpenImage(fa, "face_2.jpg");
                         } else {
                             System.out.println("Aucune face détectée dans l'image 2.");
-                            return;
+                            break;
                         }
 
                         // --- Prétraitement + Histogrammes ---
@@ -143,11 +151,12 @@ public class Main {
 
                         // --- Décision ---
                         double distance2 = Comparaison.distanceEuclidienne(NfusionA2, NfusionB2);
-
+                        double cosineSim2 = Comparaison.similitudeCosinus(NfusionA2, NfusionB2);
 
                         double score = Compatibilite.CalculCompatibilite(distance2);
 
-                        System.out.println(f.getName() + " -> Similarité : " + score);
+                        System.out.println(f.getName() + " -> Similarité Euclidienne : " + score + " | Cosinus : "
+                                + (cosineSim2 * 100) + "%");
 
                         if (score > meilleurScore) {
                             meilleurScore = score;
@@ -161,8 +170,9 @@ public class Main {
 
                         double finalAverage = meilleurScore;
 
-                        // Décision selon le score
-                        if (finalAverage >= 78.0) {
+                        // Décision selon le score (Ajusté selon les nouveaux seuils, ex 70% pour 0.30
+                        // distance)
+                        if (finalAverage >= 70.0) {
                             System.out.println("RÉSULTAT : MATCH → ACCÈS AUTORISÉ");
                         } else if (finalAverage >= 50.0) {
                             System.out.println("RÉSULTAT : DOUTEUX (score moyen trop bas)");
@@ -173,11 +183,11 @@ public class Main {
 
                     break;
                 case 3:
-                    Scanner s3 = new Scanner(System.in);
                     System.out.print("Entrez chemin de l'image:");
-                    String imagePath = s3.nextLine();
+                    String imagePath = sc.nextLine();
 
-                    //String imagePath1 = "C:/Users/HP/Music/Downloads/img_align_celeba/000404.jpg";
+                    // String imagePath1 =
+                    // "C:/Users/HP/Music/Downloads/img_align_celeba/000404.jpg";
                     Mat face = FaceDetection.detectFace(imagePath);
                     if (face != null) {
                         System.out.println("Face de l'image détectée.");
@@ -185,13 +195,12 @@ public class Main {
                         saveAndOpenImage(face, "face_detected3.jpg");
                     } else {
                         System.out.println("Aucune face détectée dans l'image 1.");
-                        return;
+                        break;
                     }
 
                     ImageProcessor ip = Pretraitement.pt(OpenCVUtils.matToImageProcessor(face));
 
                     double[] IH = Histogram.histo(ip);
-
 
                     double[] ILBP = LBP.histogramLBP(LBP.LBP2D(ip));
 
@@ -207,19 +216,17 @@ public class Main {
 
                     RealtimeComparator rc = new RealtimeComparator(
                             NfusionI,
-                            xmlPath
-                    );
-
+                            xmlPath);
 
                     rc.scanFaceFor20Seconds();
 
                     break;
                 case 4:
-                    Scanner s4 = new Scanner(System.in);
                     System.out.print("Entrez chemin de l'image:");
-                    String imagPath = s4.nextLine();
+                    String imagPath = sc.nextLine();
 
-                    //String imagePath1 = "C:/Users/HP/Music/Downloads/img_align_celeba/000003.jpg";
+                    // String imagePath1 =
+                    // "C:/Users/HP/Music/Downloads/img_align_celeba/000003.jpg";
                     Mat fac = FaceDetection.detectFace(imagPath);
                     if (fac != null) {
                         System.out.println("Face de l'image détectée.");
@@ -227,7 +234,7 @@ public class Main {
                         saveAndOpenImage(fac, "face_detected4.jpg");
                     } else {
                         System.out.println("Aucune face détectée dans l'image.");
-                        return;
+                        break;
                     }
                     Mat image = opencv_imgcodecs.imread(imagPath);
                     FaceAnalyzer analyzer = new FaceAnalyzer();
@@ -239,15 +246,6 @@ public class Main {
             }
         }
 
-
-
-
-
-
-
-
-
-
     }
 
     private static void saveAndOpenImage(Mat mat, String fileName) {
@@ -257,9 +255,11 @@ public class Main {
             opencv_imgcodecs.imwrite(outputFile.getAbsolutePath(), mat);
             System.out.println("Visage sauvegardé : " + outputFile.getAbsolutePath());
 
-           /* if (Desktop.isDesktopSupported()) {
-                Desktop.getDesktop().open(outputFile);
-            }*/
+            /*
+             * if (Desktop.isDesktopSupported()) {
+             * Desktop.getDesktop().open(outputFile);
+             * }
+             */
         } catch (Exception e) {
             e.printStackTrace();
         }

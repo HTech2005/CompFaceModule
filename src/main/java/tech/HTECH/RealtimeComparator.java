@@ -47,9 +47,10 @@ public class RealtimeComparator {
         canvas.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
         // Pour calculer la moyenne
-        List<Double> scoresList = new ArrayList<>();
+        List<Double> scoresEuclidien = new ArrayList<>();
+        List<Double> scoresCosinus = new ArrayList<>();
+
         int totalFramesProcessed = 0;
-        double currentAverage = 0.0;
 
         long startTime = System.currentTimeMillis();
         long endTime = startTime + 20_000; // 20 secondes
@@ -57,7 +58,11 @@ public class RealtimeComparator {
         System.out.println("Scan démarré... Placez votre visage dans le cadre pendant 20 secondes.");
 
         while (System.currentTimeMillis() < endTime && canvas.isVisible()) {
-            if (!cap.read(frame) || frame.empty()) continue;
+            if (!cap.read(frame) || frame.empty())
+                continue;
+
+            // Miroir (optionnel mais plus naturel)
+            org.bytedeco.opencv.global.opencv_core.flip(frame, frame, 1);
 
             int width = frame.cols();
             int height = frame.rows();
@@ -67,30 +72,41 @@ public class RealtimeComparator {
             int x = (width - boxSize) / 2;
             int y = (height - boxSize) / 2;
 
-            Scalar guideColor = new Scalar(100, 255, 150, 0);
+            Scalar guideColor = new Scalar(0, 255, 0, 0); // Vert
             Point boxTL = new Point(x, y);
             Point boxBR = new Point(x + boxSize, y + boxSize);
 
-            opencv_imgproc.rectangle(frame, boxTL, boxBR, guideColor, 2, opencv_imgproc.LINE_AA, 0);
+            // Dessin du viseur (Coins seulement pour style "tech")
+            int c = boxSize / 5;
+            int th = 3; // épaisseur
+            opencv_imgproc.line(frame, new Point(x, y), new Point(x + c, y), guideColor, th, opencv_imgproc.LINE_AA, 0);
+            opencv_imgproc.line(frame, new Point(x, y), new Point(x, y + c), guideColor, th, opencv_imgproc.LINE_AA, 0);
 
-            int c = boxSize / 10;
-            opencv_imgproc.line(frame, new Point(x, y), new Point(x + c, y), guideColor, 3, opencv_imgproc.LINE_AA, 0);
-            opencv_imgproc.line(frame, new Point(x, y), new Point(x, y + c), guideColor, 3, opencv_imgproc.LINE_AA, 0);
-            opencv_imgproc.line(frame, new Point(x + boxSize, y), new Point(x + boxSize - c, y), guideColor, 3, opencv_imgproc.LINE_AA, 0);
-            opencv_imgproc.line(frame, new Point(x + boxSize, y), new Point(x + boxSize, y + c), guideColor, 3, opencv_imgproc.LINE_AA, 0);
-            opencv_imgproc.line(frame, new Point(x, y + boxSize), new Point(x + c, y + boxSize), guideColor, 3, opencv_imgproc.LINE_AA, 0);
-            opencv_imgproc.line(frame, new Point(x, y + boxSize), new Point(x, y + boxSize - c), guideColor, 3, opencv_imgproc.LINE_AA, 0);
-            opencv_imgproc.line(frame, new Point(x + boxSize, y + boxSize), new Point(x + boxSize - c, y + boxSize), guideColor, 3, opencv_imgproc.LINE_AA, 0);
-            opencv_imgproc.line(frame, new Point(x + boxSize, y + boxSize), new Point(x + boxSize, y + boxSize - c), guideColor, 3, opencv_imgproc.LINE_AA, 0);
+            opencv_imgproc.line(frame, new Point(x + boxSize, y), new Point(x + boxSize - c, y), guideColor, th,
+                    opencv_imgproc.LINE_AA, 0);
+            opencv_imgproc.line(frame, new Point(x + boxSize, y), new Point(x + boxSize, y + c), guideColor, th,
+                    opencv_imgproc.LINE_AA, 0);
 
-            opencv_imgproc.putText(frame, "PLACEZ VOTRE VISAGE DANS LE CADRE",
-                    new Point(Math.max(20, x - 100), y - 40),
-                    opencv_imgproc.FONT_HERSHEY_DUPLEX, 1.3, guideColor, 3, opencv_imgproc.LINE_AA, false);
+            opencv_imgproc.line(frame, new Point(x, y + boxSize), new Point(x + c, y + boxSize), guideColor, th,
+                    opencv_imgproc.LINE_AA, 0);
+            opencv_imgproc.line(frame, new Point(x, y + boxSize), new Point(x, y + boxSize - c), guideColor, th,
+                    opencv_imgproc.LINE_AA, 0);
+
+            opencv_imgproc.line(frame, new Point(x + boxSize, y + boxSize), new Point(x + boxSize - c, y + boxSize),
+                    guideColor, th, opencv_imgproc.LINE_AA, 0);
+            opencv_imgproc.line(frame, new Point(x + boxSize, y + boxSize), new Point(x + boxSize, y + boxSize - c),
+                    guideColor, th, opencv_imgproc.LINE_AA, 0);
 
             long remaining = (endTime - System.currentTimeMillis()) / 1000;
-            opencv_imgproc.putText(frame, "Temps : " + remaining + " s",
-                    new Point(25, 60), opencv_imgproc.FONT_HERSHEY_SIMPLEX, 1.3,
-                    new Scalar(255, 255, 100, 0), 3, opencv_imgproc.LINE_AA, false);
+            String timeText = "TEMPS : " + remaining + " s";
+
+            // Centrer le texte du temps en haut
+            int[] baseline = new int[1];
+            Size textSize = opencv_imgproc.getTextSize(timeText, opencv_imgproc.FONT_HERSHEY_SIMPLEX, 1.0, 2, baseline);
+            Point textOrg = new Point((width - textSize.width()) / 2, 50);
+
+            opencv_imgproc.putText(frame, timeText, textOrg, opencv_imgproc.FONT_HERSHEY_SIMPLEX, 1.0,
+                    new Scalar(255, 255, 255, 0), 2, opencv_imgproc.LINE_AA, false);
 
             // Détection du visage
             opencv_imgproc.cvtColor(frame, gray, opencv_imgproc.COLOR_BGR2GRAY);
@@ -106,6 +122,7 @@ public class RealtimeComparator {
                 int cx = r.x() + r.width() / 2;
                 int cy = r.y() + r.height() / 2;
 
+                // Vérifier si le centre du visage est bien dans le cadre
                 if (cx >= x && cx <= x + boxSize && cy >= y && cy <= y + boxSize) {
                     faceInZone = true;
 
@@ -119,48 +136,42 @@ public class RealtimeComparator {
                     double[] Nfused = NormalizeVector.normalize(fused);
 
                     double distance = Comparaison.distanceEuclidienne(Nfused, referenceVector);
-                    double score = Compatibilite.CalculCompatibilite(distance);
+                    double cosSim = Comparaison.similitudeCosinus(Nfused, referenceVector);
 
-                    // On stocke le score pour la moyenne
-                    scoresList.add(score);
+                    double scoreEuclidien = Compatibilite.CalculCompatibilite(distance);
+                    double scoreCosinus = cosSim * 100.0;
+
+                    // Stockage
+                    scoresEuclidien.add(scoreEuclidien);
+                    scoresCosinus.add(scoreCosinus);
                     totalFramesProcessed++;
 
-                    // Moyenne en temps réel
-                    currentAverage = scoresList.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+                    // Affichage Temps Réel
+                    boolean isMatch = scoreCosinus > 95.0; // Seuil Cosinus strict
+                    Scalar resultColor = isMatch ? new Scalar(0, 255, 0, 0) : new Scalar(0, 0, 255, 0); // Vert ou Rouge
 
-                    boolean isMatch = score >= 75.0;
+                    // Cadre autour du visage détecté
+                    opencv_imgproc.rectangle(frame, new Point(r.x(), r.y()),
+                            new Point(r.x() + r.width(), r.y() + r.height()), resultColor, 2, opencv_imgproc.LINE_AA,
+                            0);
 
-                    Scalar color = isMatch ? new Scalar(0, 255, 0, 0) : new Scalar(0, 0, 255, 0);
-                    opencv_imgproc.rectangle(frame,
-                            new Point(r.x(), r.y()),
-                            new Point(r.x() + r.width(), r.y() + r.height()),
-                            color, 4, opencv_imgproc.LINE_AA, 0);
+                    // Infos
+                    String info1 = String.format("Euc: %.1f%%", scoreEuclidien);
+                    String info2 = String.format("Cos: %.1f%%", scoreCosinus);
 
-                    String txt = String.format("%.1f%% (moy: %.1f%%)", score, currentAverage);
-                    opencv_imgproc.putText(frame, txt,
-                            new Point(r.x(), r.y() - 10),
-                            opencv_imgproc.FONT_HERSHEY_SIMPLEX, 0.8, color, 2, opencv_imgproc.LINE_AA, false);
+                    opencv_imgproc.putText(frame, info1, new Point(r.x(), r.y() - 25),
+                            opencv_imgproc.FONT_HERSHEY_PLAIN, 1.2, resultColor, 2, opencv_imgproc.LINE_AA, false);
+                    opencv_imgproc.putText(frame, info2, new Point(r.x(), r.y() - 5), opencv_imgproc.FONT_HERSHEY_PLAIN,
+                            1.2, resultColor, 2, opencv_imgproc.LINE_AA, false);
                 }
             }
 
-            // Affichage moyenne globale
-            opencv_imgproc.putText(frame, String.format("MOYENNE : %.2f%%", currentAverage),
-                    new Point(width / 2 - 180, 100),
-                    opencv_imgproc.FONT_HERSHEY_DUPLEX, 1.1,
-                    new Scalar(255, 200, 0, 0), 3, opencv_imgproc.LINE_AA, false);
-
-            if (!faceInZone && faces.size() > 0) {
-                opencv_imgproc.putText(frame, "Placez-vous dans le cadre vert !",
-                        new Point(width - 500, height - 40),
-                        opencv_imgproc.FONT_HERSHEY_DUPLEX, 1.0,
-                        new Scalar(0, 150, 255, 0), 3, opencv_imgproc.LINE_AA, false);
-            }
-
-            if (faces.size() == 0) {
-                opencv_imgproc.putText(frame, "Aucun visage détecté",
-                        new Point(25, height - 40),
-                        opencv_imgproc.FONT_HERSHEY_SIMPLEX, 1.0,
-                        new Scalar(0, 0, 255, 0), 2, opencv_imgproc.LINE_AA, false);
+            if (!faceInZone) {
+                String msg = "PLACEZ VOTRE VISAGE AU CENTRE";
+                Size s = opencv_imgproc.getTextSize(msg, opencv_imgproc.FONT_HERSHEY_SIMPLEX, 0.8, 2, baseline);
+                opencv_imgproc.putText(frame, msg, new Point((width - s.width()) / 2, height - 50),
+                        opencv_imgproc.FONT_HERSHEY_SIMPLEX, 0.8, new Scalar(0, 255, 255, 0), 2, opencv_imgproc.LINE_AA,
+                        false);
             }
 
             canvas.showImage(converter.convert(frame));
@@ -169,30 +180,32 @@ public class RealtimeComparator {
         cap.release();
         canvas.dispose();
 
-        // === RÉSULTAT FINAL PAR MOYENNE ===
-        double finalAverage = scoresList.isEmpty() ? 0.0 :
-                scoresList.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+        // === RÉSULTAT FINAL ===
+        double avgEuc = scoresEuclidien.stream().mapToDouble(d -> d).average().orElse(0.0);
+        double avgCos = scoresCosinus.stream().mapToDouble(d -> d).average().orElse(0.0);
 
-        System.out.println("\n" + "═".repeat(70));
-        System.out.println("           SCAN TERMINÉ - RÉSULTAT PAR MOYENNE");
-        System.out.println("═".repeat(70));
+        System.out.println("\n" + "═".repeat(60));
+        System.out.println("           RÉSULTAT DU SCAN");
+        System.out.println("═".repeat(60));
 
         if (totalFramesProcessed == 0) {
-            System.out.println("Aucun visage détecté pendant le scan.");
-            System.out.println("RÉSULTAT : ÉCHEC");
+            System.out.println("ERREUR : Aucun visage analysé.");
         } else {
-            System.out.printf("Mesures effectuées : %d\n", totalFramesProcessed);
-            System.out.printf("SCORE MOYEN FINAL  : %.2f%%\n", finalAverage);
+            System.out.printf("Images analysées : %d\n", totalFramesProcessed);
+            System.out.println("------------------------------------------------------------");
+            System.out.printf("SCORE MOYEN EUCLIDIEN : %.2f%%\n", avgEuc);
+            System.out.printf("SCORE MOYEN COSINUS   : %.2f%%\n", avgCos);
+            System.out.println("------------------------------------------------------------");
 
-            if (finalAverage >= 78.0) {
-                System.out.println("RÉSULTAT : MATCH → ACCÈS AUTORISÉ");
-            } else if (finalAverage >= 65.0) {
-                System.out.println("RÉSULTAT : DOUTEUX (score moyen trop bas)");
+            // Décision basée sur le Cosinus (plus robuste)
+            if (avgCos >= 95.0) {
+                System.out.println(">>> ACCÈS AUTORISÉ (Identité confirmée)");
+            } else if (avgCos >= 85.0) {
+                System.out.println(">>> INCERTAIN (Ressemblance partielle)");
             } else {
-                System.out.println("RÉSULTAT : REFUSÉ");
+                System.out.println(">>> ACCÈS REFUSÉ (Visage inconnu)");
             }
         }
-        System.out.println("═".repeat(70));
+        System.out.println("═".repeat(60));
     }
-
 }
