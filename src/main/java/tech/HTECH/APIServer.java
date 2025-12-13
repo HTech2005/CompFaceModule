@@ -203,8 +203,8 @@ public class APIServer {
                     String bestMatch = "Inconnu";
                     double bestScore = 0.0;
 
-                    // Seuil de décision (70% comme défini dans Main.java pour 'MATCH')
-                    double threshold = 70.0;
+                    // Seuil de décision (75% pour inclure le cas à 79%)
+                    double threshold = 75.0;
 
                     for (Map.Entry<String, double[]> entry : databaseFeatures.entrySet()) {
                         double dist = Comparaison.distanceEuclidienne(features, entry.getValue());

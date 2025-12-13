@@ -1,5 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import "./CDV.css";
+// Import image safely
+import cvBackground from "../assets/cv-background.jpg";
 
 export default function CDV() {
     const navigate = useNavigate();
@@ -28,7 +30,7 @@ export default function CDV() {
 
             {/* Zone droite — Image */}
             <div className="cdv-right">
-                <div className="cdv-image">
+                <div className="cdv-image" style={{ backgroundImage: `url(${cvBackground})` }}>
                     <button className="cdv-start" onClick={() => navigate("/cdv-compare")}>Commencer</button>
                 </div>
             </div>

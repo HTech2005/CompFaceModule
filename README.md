@@ -1,90 +1,92 @@
-# CompFaceModule - Documentation Technique
+# CompFaceModule - Système de Reconnaissance et Analyse Faciale
 
-Ce projet implémente un système de reconnaissance faciale basé sur des méthodes de vision par ordinateur classiques (non-Deep Learning), utilisant OpenCV et ImageJ.
+Ce projet est une solution complète de biométrie faciale intégrant un Backend Java (OpenCV, SparkJava) et un Frontend React moderne. Il utilise des méthodes de vision par ordinateur classiques (LBP + Histogrammes) pour une détection rapide et sans GPU.
 
-## 🚀 Pipeline de Reconnaissance (De A à Z)
+## 🚀 Fonctionnalités Principales
 
-Le processus de reconnaissance suit scrupuleusement les étapes suivantes pour chaque image :
+### 1. Comparaison de Visages (CDV)
+*   **Interface** : `/cdv-compare`
+*   **Fonction** : Compare deux images uploadées.
+*   **Sortie** : Scores de similarité (Euclidien & Cosinus) et verdict.
+*   **Seuil** : Strict (Distance < 0.25 soit **75%** de similarité minimale).
 
-### 1. Détection de Visage (Face Detection)
-*   **Outil** : OpenCV (`CascadeClassifier`)
-*   **Méthode** : Viola-Jones (Haar Cascades)
-*   **Fonctionnement** : L'algorithme scanne l'image pour trouver des motifs rectangulaires contrastés ressemblant à un visage.
-*   **Action** : L'image est rognée (croppée) autour du visage détecté pour éliminer le fond inutile.
+### 2. Analyse Temps Réel (SV - Scanner Visage)
+*   **Interface** : `/sv-analysis`
+*   **Fonction** : Analyse un flux webcam en 1280x720.
+*   **Métriques** : Largeur du visage, distance inter-oculaire, dimensions de la bouche.
+*   **Afffichage** : Jauges dynamiques et mesures en pixels.
 
-### 2. Prétraitement (Preprocessing)
-Avant l'analyse, le visage subit des transformations pour standardiser l'entrée :
-1.  **Niveaux de gris** : Conversion de l'image couleur en noir et blanc (0-255).
-2.  **Redimensionnement** : Image ramenée à **128x128 pixels**.
-3.  **Égalisation d'Histogramme** : Amélioration du contraste pour compenser les variations d'éclairage.
+### 3. Identification Temps Réel (TR)
+*   **Interface** : `/tr-recognition`
+*   **Fonction** : Identifie une personne en direct via la webcam.
+*   **Processus** :
+    1.  Capture vidéo et détection faciale.
+    2.  Envoi au backend `/api/search`.
+    3.  Comparaison instantanée avec la base de données (`src/main/bdd`).
+*   **Feedback** : Overlay de visée, Timer de 10s, Badge d'accès (Autorisé/Refusé).
 
-### 3. Extraction de Caractéristiques (Feature Extraction)
-Nous utilisons une approche hybride combinant deux descripteurs :
+---
 
-#### A. Histogramme de Niveau de Gris
-Il représente la distribution des intensités lumineuses du visage.
-*   On compte le nombre de pixels pour chaque niveau de gris $k$ (de 0 à 255).
-*   **Formule** : $H(k) = \frac{n_k}{N}$
-    *   $n_k$ : nombre de pixels d'intensité $k$.
-    *   $N$ : nombre total de pixels.
+## 🛠 Architecture Technique
 
-#### B. Local Binary Patterns (LBP)
-Le LBP analyse la texture locale (les micro-détails de la peau).
-## 📊 Analyse de Performance (Estimations)
+### Backend (Java)
+*   **Framework** : SparkJava (Micro-serveur HTTP).
+*   **Vision** : OpenCV (via JavaCV).
+*   **Algorithme** :
+    1.  **Détection** : Haar Cascades (Viola-Jones).
+    2.  **Extraction** : Histogrammes de niveaux de gris + Local Binary Patterns (LBP).
+    3.  **Fusion** : Vecteur unique normalisé.
+    4.  **Comparaison** : Distance Euclidienne & Similarité Cosinus.
+*   **Base de Données** : Charge les images de `src/main/bdd` en mémoire au démarrage pour une recherche ultra-rapide.
 
-Ce module utilise des techniques de vision par ordinateur classiques (LBP + Histogrammes). Voici une estimation de ses performances :
+### Frontend (React)
+*   **Design** : Interface "Glassmorphism" moderne (fonds sombres, flou, néons).
+*   **Navigation** : React Router v6.
+*   **Composants** :
+    *   `TRRecognition` : Logique de timer et overlay.
+    *   `SVAnalysis` : Tableaux de bord de métriques.
+    *   `CDVCompare` : Drag & drop et visualisations.
 
-### Fiabilité (Robustesse) : ~75% - 85%
-*   **Conditions Idéales** (Opérateur face caméra, bonne lumière) : Très fiable.
-*   **Limitations** : Sensible aux fortes variations de lumière (ombres), aux rotations de tête (>15°) et aux obstructions (lunettes de soleil).
-*   **Comparaison** : Moins robuste qu'un système Deep Learning (FaceNet) en conditions "sauvages", mais beaucoup plus léger et rapide (CPU).
+---
 
-### Taux de Compatibilité (Précision) : ~95%
-*   **Sécurité** : Le seuil de décision est réglé de manière stricte (Euclidien < 0.30, Cosinus > 95%).
-*   **Faux Positifs** : Très faibles. Le système privilégie le rejet d'un intrus plutôt que l'acceptation par erreur.
-*   **Comportement** : Un utilisateur légitime mal éclairé pourra être rejeté ("Faux Négatif"), mais un intrus sera quasiment toujours bloqué.
-*   Pour chaque pixel central $g_c$, on compare sa valeur avec ses 8 voisins $g_p$.
-*   **Formule LBP** :
-    $$LBP_{P,R} = \sum_{p=0}^{P-1} s(g_p - g_c) 2^p$$
-    *   Où la fonction seuil $s(x)$ vaut 1 si $x \ge 0$, sinon 0.
-*   On construit ensuite un histogramme de ces valeurs LBP.
+## ⚡ Installation et Lancement
 
-### 4. Fusion et Normalisation
-Les deux vecteurs (Histogramme global et Histogramme LBP) sont concaténés en un seul vecteur unique de caractéristiques.
-Ce vecteur est ensuite **normalisé** (rendu unitaire) pour que l'échelle des valeurs n'influence pas la comparaison.
+### 1. Démarrer le Backend
+Le serveur API Java doit être lancé en premier. Il écoute sur le port **4567**.
 
-*   **Formule de Normalisation Euclidienne** :
-    $$V_{norm} = \frac{V}{||V||} = \frac{V}{\sqrt{\sum V_i^2}}$$
-
-### 5. Comparaison et Décision
-Pour vérifier si deux visages correspondent, on compare leurs vecteurs normalisés $A$ et $B$.
-
-#### Méthode 1 : Distance Euclidienne
-C'est la distance géométrique standard entre deux points.
-*   **Formule** :
-    $$d(A, B) = \sqrt{\sum_{i=1}^{n} (A_i - B_i)^2}$$
-*   **Interprétation** : Plus la distance est proche de **0**, plus les visages sont similaires.
-
-#### Méthode 2 : Similarité Cosinus (Recommandée)
-Elle mesure le cosinus de l'angle entre les deux vecteurs.
-*   **Formule** :
-    $$\text{Cosinus}(A, B) = \frac{A \cdot B}{||A|| \times ||B||} = \sum_{i=1}^{n} A_i \times B_i$$
-    *(Puisque nos vecteurs sont déjà normalisés, $||A|| = ||B|| = 1$)*
-*   **Interprétation** : Le résultat est entre 0 et 1 (ou 0% et 100%). Plus il est proche de **1 (100%)**, plus les visages sont identiques.
-
-#### Score de Compatibilité
-Un score simplifié est calculé à partir de la distance Euclidienne :
-$$Score = (1 - d(A, B)) \times 100$$
-*(Si le score est négatif, il est ramené à 0)*.
-
-## 🛠 Compilation et Usage
-
-**Compiler :**
 ```bash
-mvn clean compile
+mvn exec:java "-Dexec.mainClass=tech.HTECH.APIServer"
+```
+*Note : Assurez-vous d'avoir des images dans `src/main/bdd` pour que l'identification fonctionne.*
+
+### 2. Démarrer le Frontend
+Dans un nouveau terminal, lancez l'application React (Port 3000).
+
+```bash
+cd frontend
+npm start
 ```
 
-**Lancer :**
-```bash
-mvn exec:java
-```
+---
+
+## ⚙️ Configuration des Seuils
+
+Le système est configuré pour une sécurité équilibrée :
+
+*   **Seuil de Décision** : **75%** (Distance < 0.25).
+*   **Tolérance** : Ajustée pour accepter les légères variations (éclairage, angle) tout en rejetant les imposteurs.
+*   **Fichiers Clés** :
+    *   `Decision.java` : Logique booléenne de validation.
+    *   `APIServer.java` : Logique de l'API de recherche.
+
+---
+
+## 📊 Performance Estimée
+
+*   **Robustesse** : ~80-90% en conditions contrôlées.
+*   **Vitesse** : Traitement < 200ms par image (CPU standard).
+*   **Limitations** : Sensible aux fortes contre-jours et rotations extrêmes (>20°).
+
+---
+
+© 2024 Tech HTECH - Module de Compétition Faciale
