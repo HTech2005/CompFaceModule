@@ -7,6 +7,8 @@ export default function CV() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [features, setFeatures] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
   const handleFileChange = (event) => {
     if (event.target.files && event.target.files[0]) {
@@ -32,6 +34,7 @@ export default function CV() {
         const data = await response.json();
         if (data.found) {
           setFeatures(data.features);
+          setImageSize({ width: data.imageWidth, height: data.imageHeight });
         } else {
           alert("Erreur : Aucun visage détecté ! Assurez-vous que le visage est bien éclairé et de face.");
         }
@@ -44,6 +47,49 @@ export default function CV() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const renderBox = (rect, color, label) => {
+    if (!rect || !imageSize.width) return null;
+
+    // Calcul du ratio d'affichage (simplifié, on suppose que l'image remplit le conteneur via contain)
+    // Pour être précis, il faudrait mesurer l'élément img réel
+    const imgElement = document.querySelector(".cv-preview-img");
+    if (!imgElement) return null;
+
+    const displayW = imgElement.clientWidth;
+    const displayH = imgElement.clientHeight;
+    const ratioX = displayW / imageSize.width;
+    const ratioY = displayH / imageSize.height;
+
+    // Offset si contain centre l'image
+    const rectStyle = {
+      position: "absolute",
+      left: rect[0] * ratioX,
+      top: rect[1] * ratioY,
+      width: rect[2] * ratioX,
+      height: rect[3] * ratioY,
+      border: `2px solid ${color}`,
+      boxShadow: `0 0 10px ${color}`,
+      zIndex: 10,
+      pointerEvents: "none"
+    };
+
+    return (
+      <div style={rectStyle} key={label}>
+        <span style={{
+          position: "absolute",
+          top: "-20px",
+          left: "0",
+          backgroundColor: color,
+          color: "white",
+          fontSize: "10px",
+          padding: "2px 5px",
+          borderRadius: "3px",
+          fontWeight: "bold"
+        }}>{label}</span>
+      </div>
+    );
   };
 
   return (
@@ -82,16 +128,16 @@ export default function CV() {
         {features && (
           <div className="cv-results-grid">
             <div className="cv-card">
-              <span className="cv-card-value">{features.faceWidth}px</span>
-              <span className="cv-card-label">Largeur</span>
-            </div>
-            <div className="cv-card">
-              <span className="cv-card-value">{features.faceHeight}px</span>
-              <span className="cv-card-label">Hauteur</span>
+              <span className="cv-card-value">{features.faceWidth}x{features.faceHeight}</span>
+              <span className="cv-card-label">Visage (px)</span>
             </div>
             <div className="cv-card">
               <span className="cv-card-value">{features.eyeDistance}px</span>
-              <span className="cv-card-label">Yeux</span>
+              <span className="cv-card-label">Distance Yeux</span>
+            </div>
+            <div className="cv-card">
+              <span className="cv-card-value">{features.noseWidth}px</span>
+              <span className="cv-card-label">Largeur Nez</span>
             </div>
             <div className="cv-card">
               <span className="cv-card-value">{features.mouthWidth}px</span>
@@ -104,12 +150,25 @@ export default function CV() {
       {/* RIGHT PANEL: Preview */}
       <div className="cv-right">
         {selectedFile ? (
-          <div className="cv-image-container">
+          <div className="cv-image-container" style={{ position: "relative", display: "inline-block" }}>
             <img
               src={URL.createObjectURL(selectedFile)}
               alt="Preview"
               className="cv-preview-img"
+              onLoad={(e) => {
+                // Force re-render once image is loaded to calc boxes
+                setContainerSize({ width: e.target.clientWidth, height: e.target.clientHeight });
+              }}
             />
+            {features && (
+              <>
+                {renderBox(features.faceRect, "#007bff", "VISAGE")}
+                {renderBox(features.eyeLeftRect, "#ff4e4e", "OEIL G")}
+                {renderBox(features.eyeRightRect, "#ff4e4e", "OEIL D")}
+                {renderBox(features.noseRect, "#00ff88", "NEZ")}
+                {renderBox(features.mouthRect, "#ffcc00", "BOUCHE")}
+              </>
+            )}
           </div>
         ) : (
           <div className="cv-placeholder">

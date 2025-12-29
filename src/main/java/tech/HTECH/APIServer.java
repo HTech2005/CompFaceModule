@@ -80,6 +80,50 @@ public class APIServer {
             e.printStackTrace();
         }
 
+        // Endpoint: Analyze Face (Option 4 equivalent)
+        post("/api/analyze", (req, res) -> {
+            req.attribute("org.eclipse.jetty.multipartConfig", new MultipartConfigElement("/temp"));
+
+            try (InputStream is = req.raw().getPart("image").getInputStream()) {
+                Path tempFile = Files.createTempFile("upload_", ".jpg");
+                Files.copy(is, tempFile, StandardCopyOption.REPLACE_EXISTING);
+
+                Mat image = opencv_imgcodecs.imread(tempFile.toAbsolutePath().toString());
+                if (image.empty()) {
+                    res.status(400);
+                    return "Impossible de lire l'image";
+                }
+
+                FaceAnalyzer analyzer = new FaceAnalyzer();
+                List<FaceFeature> features = analyzer.analyzeFace(image);
+
+                Map<String, Object> result = new HashMap<>();
+                if (!features.isEmpty()) {
+                    FaceFeature largest = features.get(0);
+                    for (FaceFeature f : features) {
+                        if (f.faceWidth > largest.faceWidth)
+                            largest = f;
+                    }
+                    result.put("found", true);
+                    result.put("features", largest);
+                    result.put("imageWidth", image.cols());
+                    result.put("imageHeight", image.rows());
+                } else {
+                    result.put("found", false);
+                }
+
+                Files.deleteIfExists(tempFile);
+
+                res.type("application/json");
+                return new Gson().toJson(result);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                res.status(500);
+                return "Erreur serveur: " + e.getMessage();
+            }
+        });
+
         // Endpoint: Compare Two Faces (Option 1 equivalent)
         post("/api/compare", (req, res) -> {
             req.attribute("org.eclipse.jetty.multipartConfig", new MultipartConfigElement("/temp"));
