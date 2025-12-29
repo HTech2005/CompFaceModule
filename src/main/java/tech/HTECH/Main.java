@@ -26,7 +26,7 @@ public class Main {
             Loader.load(opencv_core.class);
 
             System.out.println(
-                    "\n1-Comparer deux visages\n2-Comparer un visage aux visages de la bdd\n3-Temps Réel avec un visage de votre choix\n4-Caractéristiques d'un visage\nChoix:");
+                    "\n1-Comparer deux visages\n2-Comparer un visage aux visages de la bdd\n3-Temps Réel avec un visage de votre choix\nChoix:");
 
             // Gestion erreur entrée non entière
             if (!sc.hasNextInt()) {
@@ -220,41 +220,6 @@ public class Main {
                             xmlPath);
 
                     rc.scanFaceFor20Seconds();
-
-                    break;
-                case 4:
-                    System.out.print("Entrez chemin de l'image:");
-                    String imagPath = sc.nextLine();
-
-                    // String imagePath1 =
-                    // "C:/Users/HP/Music/Downloads/img_align_celeba/000003.jpg";
-                    Mat fac = FaceDetection.detectFace(imagPath);
-                    if (fac != null) {
-                        System.out.println("Face de l'image détectée.");
-                        ImageProcessor img = OpenCVUtils.matToImageProcessor(fac);
-                        saveAndOpenImage(fac, "face_detected4.jpg");
-                    } else {
-                        System.out.println("Aucune face détectée dans l'image.");
-                        break;
-                    }
-                    Mat image = opencv_imgcodecs.imread(imagPath);
-                    FaceAnalyzer analyzer = new FaceAnalyzer();
-                    List<FaceFeature> results = analyzer.analyzeFace(image);
-
-                    if (results.isEmpty()) {
-                        System.out.println("Aucun visage détecté pour l'analyse.");
-                    } else {
-                        // Trouver le visage le plus grand (le plus pertinent)
-                        FaceFeature largestFace = results.get(0);
-                        for (FaceFeature f : results) {
-                            if (f.faceWidth > largestFace.faceWidth) {
-                                largestFace = f;
-                            }
-                        }
-
-                        System.out.println("\n--- VISAGE PRINCIPAL DÉTECTÉ ---");
-                        System.out.println(largestFace);
-                    }
 
                     break;
             }
