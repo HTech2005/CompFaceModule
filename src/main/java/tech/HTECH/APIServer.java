@@ -157,7 +157,7 @@ public class APIServer {
                 double score = Compatibilite.CalculCompatibilite(dist);
 
                 Map<String, Object> result = new HashMap<>();
-                result.put("match", Decision.dec(dist));
+                result.put("match", Decision.dec(dist, cos));
                 result.put("scoreEuclidien", score);
                 result.put("scoreCosinus", cos * 100);
 
@@ -208,7 +208,10 @@ public class APIServer {
 
                     for (Map.Entry<String, double[]> entry : databaseFeatures.entrySet()) {
                         double dist = Comparaison.distanceEuclidienne(features, entry.getValue());
-                        double score = Compatibilite.CalculCompatibilite(dist);
+                        double cosSim = Comparaison.similitudeCosinus(features, entry.getValue());
+
+                        // Calcul d'un score fusionné pour le classement
+                        double score = (Compatibilite.CalculCompatibilite(dist) * 0.4) + (cosSim * 100.0 * 0.6);
 
                         if (score > bestScore) {
                             bestScore = score;
@@ -223,7 +226,7 @@ public class APIServer {
 
                     result.put("bestMatch", bestMatch.replaceFirst("[.][^.]+$", "")); // Remove ext
                     result.put("score", bestScore);
-                    result.put("isMatch", bestScore >= threshold);
+                    result.put("isMatch", bestScore >= 75.0); // Seuil global fusionné
                 }
 
                 res.type("application/json");

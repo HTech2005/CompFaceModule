@@ -18,13 +18,16 @@ public class Comparaison {
 
         for (int i = 0; i < A.length; i++) {
             dotProduct += A[i] * B[i];
-            normA += Math.pow(A[i], 2);
-            normB += Math.pow(B[i], 2);
+            normA += A[i] * A[i];
+            normB += B[i] * B[i];
         }
 
-        if (normA == 0 || normB == 0)
+        if (normA <= 0 || normB <= 0)
             return 0.0;
 
-        return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+        double similarity = dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+
+        // Bornage pour éviter les imprécisions flottantes (ex: 1.0000000000000002)
+        return Math.min(1.0, Math.max(-1.0, similarity));
     }
 }

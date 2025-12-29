@@ -78,16 +78,24 @@ $$\text{Taux} = (1 - d) \times 100$$
 
 ---
 
-## ⚙️ Seuils et Décision (`Comparaison.java` & `Decision.java`)
+## ⚙️ Seuils et Décision Fusionnée (`Decision.java`)
 
-Le système est calibré sur un **Seuil (Threshold)** de sécurité de **0.30** :
+Le système n'utilise plus une simple distance brute, mais une **fusion de scores** pour une fiabilité maximale :
 
-| État | Distance | Taux | Verdict |
-| :--- | :--- | :--- | :--- |
-| **Match Parfait** | 0.00 | 100% | ACCÈS AUTORISÉ |
-| **Limite Acceptation** | **0.30** | **70%** | ACCÈS AUTORISÉ |
-| **Douteux** | 0.35 | 65% | REFUSÉ |
-| **Rejeté** | > 0.40 | < 60% | REFUSÉ |
+*   **Score Euclidien (40%)** : Basé sur la distance $d$ entre les vecteurs.
+*   **Score Cosinus (60%)** : Basé sur l'alignement angulaire des traits faciaux.
+
+### Formule du Score Global :
+$$Score_{Global} = (Score_{Euc} \times 0.4) + (Score_{Cos} \times 0.6)$$
+
+| Paramètre | Valeur | Description |
+| :--- | :--- | :--- |
+| **Seuil de Décision** | **75.0%** | Score global minimum pour valider l'identité. |
+| **Poids Cosinus** | **60%** | Priorité à la texture (plus robuste aux variations). |
+
+### Logique de Verdict :
+- **SI** $Score_{Global} \ge 75\%$ $\rightarrow$ **MATCH (Accès Autorisé)**.
+- **SINON** $\rightarrow$ **REFUSÉ**.
 
 ---
 

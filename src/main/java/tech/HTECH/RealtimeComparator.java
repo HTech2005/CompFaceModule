@@ -147,7 +147,7 @@ public class RealtimeComparator {
                     totalFramesProcessed++;
 
                     // Affichage Temps Réel
-                    boolean isMatch = scoreCosinus > 95.0; // Seuil Cosinus strict
+                    boolean isMatch = Decision.dec(distance, cosSim);
                     Scalar resultColor = isMatch ? new Scalar(0, 255, 0, 0) : new Scalar(0, 0, 255, 0); // Vert ou Rouge
 
                     // Cadre autour du visage détecté

@@ -92,7 +92,7 @@ public class Main {
                     double distance = Comparaison.distanceEuclidienne(NfusionA, NfusionB);
                     double cosineSim = Comparaison.similitudeCosinus(NfusionA, NfusionB);
 
-                    if (Decision.dec(distance))
+                    if (Decision.dec(distance, cosineSim))
                         System.out.println("Décision (Euclidienne) : Même personne");
                     else
                         System.out.println("Décision (Euclidienne) : Personnes différentes");
