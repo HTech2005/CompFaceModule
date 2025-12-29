@@ -9,9 +9,8 @@ public class Decision {
         double scoreCos = cosineSim * 100.0;
 
         // Score fusionné (moyenne pondérée)
-        // On accorde un peu plus de poids au Cosinus car il est plus robuste aux
-        // variations d'intensité
-        double globalScore = (scoreEucl * 0.4) + (scoreCos * 0.6);
+        // On accorde plus de poids au Score Euclidien comme demandé par l'utilisateur
+        double globalScore = (scoreEucl * 0.6) + (scoreCos * 0.4);
 
         double seuilGlobal = 75.0; // Seuil recommandé après fusion
 

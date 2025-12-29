@@ -46,11 +46,23 @@ public class FaceDetection {
             }
         }
 
-        // Dessiner un rectangle autour du visage le plus grand
-        opencv_imgproc.rectangle(image, largestFace, new Scalar(0, 255, 0, 0), 2, 8, 0);
+        // Recadrage interne (Option 2) : Réduire de 15% pour ne garder que le "cœur" du
+        // visage
+        int paddingW = (int) (largestFace.width() * 0.15);
+        int paddingH = (int) (largestFace.height() * 0.15);
 
-        // Extraire le visage et cloner pour persistance
-        Mat face = new Mat(image, largestFace).clone();
+        Rect coreFace = new Rect(
+                largestFace.x() + paddingW,
+                largestFace.y() + paddingH,
+                largestFace.width() - (2 * paddingW),
+                largestFace.height() - (2 * paddingH));
+
+        // Dessiner le rectangle interne (bleu) pour vérification visuelle dans les
+        // logs/images si besoin
+        opencv_imgproc.rectangle(image, coreFace, new Scalar(255, 0, 0, 0), 2, 8, 0);
+
+        // Extraire le "cœur" du visage et cloner pour persistance
+        Mat face = new Mat(image, coreFace).clone();
 
         // Sauvegarder l'image annotée (facultatif)
         // opencv_imgcodecs.imwrite("C:/Users/HP/Desktop/TNI/CompFaceModule/resultat_face_detected"+cpt+".jpg",

@@ -37,26 +37,13 @@ Le système suit un pipeline de traitement rigoureux pour transformer une image 
     *   **Pourquoi** : La couleur n'est pas fiable (dépend de l'éclairage). Les niveaux de gris préservent la **structure**.
 *   **B. Redimensionnement Standard (128x128)**
     *   **Comment** : Interpolation des pixels pour atteindre une taille fixe.
-    *   **Pourquoi** : Permet la comparaison mathématique de vecteurs de même dimension, quelle que soit la résolution d'origine.
-   - Redimensionnement (128x128).
-   - Égalisation d'histogramme ImageJ.
-   - LBP 2D & Histogramme global.
+    *   **Pourquoi** : Permet la comparaison mathématique de vecteurs de même dimension.
+*   **C. Égalisation d'Histogramme**
+    *   **Comment** : Étirement dynamique via ContrastEnhancer.
+    *   **Pourquoi** : Normalise l'éclairage pour une robustesse accrue.
 
 ### 3. Extraction de Caractéristiques (Features)
-*   **A. Histogramme Global (`Histogram.java`)**
-    *   **Comment** : Distribution statistique des niveaux de gris.
-    *   **Pourquoi** : Capture la **forme générale** et la distribution lumineuse du visage.
-*   **B. LBP - Local Binary Pattern (`LBP.java`)**
-    *   **Comment** : Compare chaque pixel à ses 8 voisins pour générer un code binaire 8-bits.
-    *   **Pourquoi** : C'est le cœur du système. Il capture la **texture fine** (pores de la peau, rides, micro-contours). Très robuste aux changements de lumière.
-
-### 4. Fusion et Normalisation (`Fusion.java` & `NormalizeVector.java`)
-*   **A. Fusion**
-    *   **Comment** : Concaténation des vecteurs Histogramme et LBP.
-    *   **Pourquoi** : Combine les informations de forme globale et de texture locale pour une signature complète.
-*   **B. Normalisation**
-    *   **Comment** : Division par la norme Euclidienne.
-    *   **Pourquoi** : Transforme le vecteur en une "direction" mathématique pure. Garantit que la distance dépend de la similitude des traits et non de l'intensité brute.
+*   **Cœur du système** : Utilisation d'un **LBP Global** (Histogramme de texture) couplé à un histogramme de forme.
 
 ---
 
@@ -80,22 +67,21 @@ $$\text{Taux} = (1 - d) \times 100$$
 
 ## ⚙️ Seuils et Décision Fusionnée (`Decision.java`)
 
-Le système n'utilise plus une simple distance brute, mais une **fusion de scores** pour une fiabilité maximale :
+Le système utilise une **fusion de scores** pour une fiabilité maximale :
 
-*   **Score Euclidien (30%)** : Basé sur la distance $d$ entre les vecteurs.
-*   **Score Cosinus (70%)** : Basé sur l'alignement angulaire des traits faciaux.
+*   **Score Euclidien (60%)** : Priorité à la forme globale comme demandé.
+*   **Score Cosinus (40%)** : Texture fine pour la robustesse résiduelle.
 
 ### Formule du Score Global :
-Le système utilise désormais une fusion d'expertises avec un score global pondéré :
-$$Score_{Global} = (Score_{Euc} \times 0.4) + (Score_{Cos} \times 0.6)$$
+$$Score_{Global} = (Score_{Euc} \times 0.6) + (Score_{Cos} \times 0.4)$$
 
 | Paramètre | Valeur | Description |
 | :--- | :--- | :--- |
 | **Seuil de Décision** | **75.0%** | Score global minimum pour valider l'identité. |
-| **Poids Cosinus** | **60%** | Priorité à la texture (plus robuste aux variations). |
+| **Poids Cosinus** | **40%** | Texture locale. |
 
 ### Logique de Verdict :
-- **SI** $Score_{Global} \ge 75\%$ $\rightarrow$ **MATCH (Accès Autorisé)**.
+- **SI** $Score_{Global} \ge 75\%$ $\rightarrow$ **MATCH**.
 - **SINON** $\rightarrow$ **REFUSÉ**.
 
 ---
