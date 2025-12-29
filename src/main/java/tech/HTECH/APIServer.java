@@ -217,7 +217,7 @@ public class APIServer {
                     double bestScore = 0.0;
 
                     // Seuil de décision (70% pour inclure le cas à 79%)
-                    double threshold = 70.0;
+                    double threshold = 90.0;
 
                     for (Map.Entry<String, double[]> entry : databaseFeatures.entrySet()) {
                         double distChi2 = Comparaison.distanceKhiCarre(features, entry.getValue());

@@ -82,7 +82,7 @@ $$Score_{Global} = (Score_{Chi2} \times 0.5) + (Score_{Cos} \times 0.3) + (Score
 | **Texture Chi2** | **50%** | Identification précise de la peau/pores. |
 | **Cosinus** | **30%** | Stabilité face aux changements de lumière. |
 | **Euclidien** | **20%** | Vérification de la structure globale. |
-| **Seuil Global** | **75.0%** | Score minimum pour valider le Match. |
+| **Seuil Global** | **90.0%** | Score minimum pour valider le Match. |
 
 ### Logique de Verdict :
 - **SI** $Score_{Global} \ge 75\%$ $\rightarrow$ **MATCH (Identité Confirmée)**.

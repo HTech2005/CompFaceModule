@@ -23,7 +23,7 @@ public class Decision {
         // Chi-Carré (50%) + Cosinus (30%) + Euclidien (20%)
         double globalScore = (scoreChi2 * 0.5) + (scoreCos * 0.3) + (scoreEucl * 0.2);
 
-        double seuilGlobal = 75.0;
+        double seuilGlobal = 90.0;
 
         return globalScore >= seuilGlobal;
     }

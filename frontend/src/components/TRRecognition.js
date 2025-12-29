@@ -8,7 +8,6 @@ export default function TRRecognition() {
     const canvasRef = useRef(null);
     const [isStreaming, setIsStreaming] = useState(false);
     const [searchResult, setSearchResult] = useState(null);
-    const [error, setError] = useState(null);
 
     // Timer State
     const [timeLeft, setTimeLeft] = useState(10);
@@ -31,7 +30,6 @@ export default function TRRecognition() {
             }
         } catch (err) {
             console.error("Error accessing webcam:", err);
-            setError("Impossible d'accéder à la caméra.");
         }
     };
 
