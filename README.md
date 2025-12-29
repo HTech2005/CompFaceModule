@@ -2,90 +2,91 @@
 
 Ce projet est une solution complète de biométrie faciale intégrant un Backend Java (OpenCV, SparkJava) et un Frontend React moderne. Il utilise des méthodes de vision par ordinateur classiques (LBP + Histogrammes) pour une détection rapide et sans GPU.
 
+---
+
 ## 🚀 Fonctionnalités Principales
 
 ### 1. Comparaison de Visages (CDV)
 *   **Interface** : `/cdv-compare`
 *   **Fonction** : Compare deux images uploadées.
 *   **Sortie** : Scores de similarité (Euclidien & Cosinus) et verdict.
-*   **Seuil** : Strict (Distance < 0.25 soit **75%** de similarité minimale).
 
 ### 2. Analyse Temps Réel (SV - Scanner Visage)
 *   **Interface** : `/sv-analysis`
-*   **Fonction** : Analyse un flux webcam en 1280x720.
-*   **Métriques** : Largeur du visage, distance inter-oculaire, dimensions de la bouche.
-*   **Afffichage** : Jauges dynamiques et mesures en pixels.
+*   **Fonction** : Analyse un flux webcam pour mesurer la structure morphologique.
 
 ### 3. Identification Temps Réel (TR)
 *   **Interface** : `/tr-recognition`
-*   **Fonction** : Identifie une personne en direct via la webcam.
-*   **Processus** :
-    1.  Capture vidéo et détection faciale.
-    2.  Envoi au backend `/api/search`.
-    3.  Comparaison instantanée avec la base de données (`src/main/bdd`).
-*   **Feedback** : Overlay de visée, Timer de 10s, Badge d'accès (Autorisé/Refusé).
+*   **Fonction** : Identifie une personne en direct par rapport à la base de données (`src/main/bdd`).
 
 ---
 
-## 🛠 Architecture Technique
+## 🧠 Fonctionnement Technique de A à Z
 
-### Backend (Java)
-*   **Framework** : SparkJava (Micro-serveur HTTP).
-*   **Vision** : OpenCV (via JavaCV).
-*   **Algorithme** :
-    1.  **Détection** : Haar Cascades (Viola-Jones).
-    2.  **Extraction** : Histogrammes de niveaux de gris + Local Binary Patterns (LBP).
-    3.  **Fusion** : Vecteur unique normalisé.
-    4.  **Comparaison** : Distance Euclidienne & Similarité Cosinus.
-*   **Base de Données** : Charge les images de `src/main/bdd` en mémoire au démarrage pour une recherche ultra-rapide.
+Le système suit un pipeline de traitement rigoureux pour transformer une image brute en une signature biométrique unique.
 
-### Frontend (React)
-*   **Design** : Interface "Glassmorphism" moderne (fonds sombres, flou, néons).
-*   **Navigation** : React Router v6.
-*   **Composants** :
-    *   `TRRecognition` : Logique de timer et overlay.
-    *   `SVAnalysis` : Tableaux de bord de métriques.
-    *   `CDVCompare` : Drag & drop et visualisations.
+### 1. Détection du Visage (Haar Cascade)
+*   **Comment** : Utilisation de l'algorithme de **Viola-Jones**. Le système scanne l'image pour trouver des contrastes spécifiques (yeux plus sombres que le front, etc.).
+*   **Pourquoi** : Pour isoler le visage et éliminer le "bruit" (fond, vêtements) afin d'optimiser les calculs.
+
+### 2. Prétraitement (`Pretraitement.java`)
+*   **Gris** : On retire la couleur car elle n'est pas fiable biométriquement (dépend de la lampe). On garde la **structure**.
+*   **Resize (128x128)** : Normalisation de la taille pour permettre la comparaison mathématique de vecteurs de même dimension.
+*   **Égalisation d'Histogramme** : On étire le contraste. **Pourquoi ?** Pour que le système reconnaisse la même personne qu'il fasse jour ou nuit.
+
+### 3. Extraction de Caractéristiques
+*   **Histogramme Global** : Compte la distribution des intensités. Capture la **forme générale**.
+*   **LBP (Local Binary Pattern)** : Analyse la relation entre un pixel et ses voisins.
+    *   **Comment** : On génère un code binaire 8-bits par pixel.
+    *   **Pourquoi** : Capture la **texture fine** (pores, rides). C'est la partie la plus précise de la reconnaissance.
+
+### 4. Fusion et Normalisation
+*   **Fusion** : Combinaison des vecteur Histogramme + LBP.
+*   **Normalisation** : Conversion du vecteur pour que sa norme soit égale à 1. **Pourquoi ?** Pour comparer des "directions" de traits faciaux et non des valeurs brutes de pixels.
+
+---
+
+## 📊 Formules Mathématiques
+
+### Distance Euclidienne
+C'est la mesure de l'écart direct entre deux signatures $A$ et $B$ dans un espace à $n$ dimensions.
+$$d(A, B) = \sqrt{\sum_{i=1}^{n} (A_i - B_i)^2}$$
+> Plus $d$ tend vers **0**, plus les visages sont **identiques**.
+
+### Similarité Cosinus
+Elle mesure l'angle entre les deux vecteurs de caractéristiques. Contrairement à la distance qui mesure l'écart "physique", le cosinus mesure l'alignement des traits.
+$$s(A, B) = \frac{\sum_{i=1}^{n} A_i \cdot B_i}{\sqrt{\sum_{i=1}^{n} A_i^2} \cdot \sqrt{\sum_{i=1}^{n} B_i^2}}$$
+> Le résultat varie de **0** (totalement différent) à **1** (parfaitement aligné).
+
+---
+
+## ⚙️ Seuils et Décision
+
+Le système utilise un **Seuil (Threshold)** critique pour valider une identité :
+
+| Paramètre | Valeur | Description |
+| :--- | :--- | :--- |
+| **Seuil de Distance** | **0.25** | Limite maximale pour un "Match". |
+| **Taux de Compatibilité** | **75%** | Correspondance minimale exigée ($ (1 - d) \times 100 $). |
+
+### Logique de Décision :
+- **SI** Distance $< 0.25$ $\rightarrow$ **MATCH (Accès Autorisé)**.
+- **SINON** $\rightarrow$ **REFUSÉ**.
 
 ---
 
 ## ⚡ Installation et Lancement
 
-### 1. Démarrer le Backend
-Le serveur API Java doit être lancé en premier. Il écoute sur le port **4567**.
-
+### 1. Démarrer le Backend (Port 4567)
 ```bash
 mvn exec:java "-Dexec.mainClass=tech.HTECH.APIServer"
 ```
-*Note : Assurez-vous d'avoir des images dans `src/main/bdd` pour que l'identification fonctionne.*
 
-### 2. Démarrer le Frontend
-Dans un nouveau terminal, lancez l'application React (Port 3000).
-
+### 2. Démarrer le Frontend (Port 3000)
 ```bash
 cd frontend
 npm start
 ```
-
----
-
-## ⚙️ Configuration des Seuils
-
-Le système est configuré pour une sécurité équilibrée :
-
-*   **Seuil de Décision** : **75%** (Distance < 0.25).
-*   **Tolérance** : Ajustée pour accepter les légères variations (éclairage, angle) tout en rejetant les imposteurs.
-*   **Fichiers Clés** :
-    *   `Decision.java` : Logique booléenne de validation.
-    *   `APIServer.java` : Logique de l'API de recherche.
-
----
-
-## 📊 Performance Estimée
-
-*   **Robustesse** : ~80-90% en conditions contrôlées.
-*   **Vitesse** : Traitement < 200ms par image (CPU standard).
-*   **Limitations** : Sensible aux fortes contre-jours et rotations extrêmes (>20°).
 
 ---
 
