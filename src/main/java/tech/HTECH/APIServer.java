@@ -156,10 +156,16 @@ public class APIServer {
                 double cos = Comparaison.similitudeCosinus(N1, N2);
                 double score = Compatibilite.CalculCompatibilite(dist);
 
+                // Encodage des visages détectés en Base64 pour prouver que ça marche
+                String face1Base64 = OpenCVUtils.matToBase64(face1);
+                String face2Base64 = OpenCVUtils.matToBase64(face2);
+
                 Map<String, Object> result = new HashMap<>();
                 result.put("match", Decision.dec(dist, cos));
                 result.put("scoreEuclidien", score);
                 result.put("scoreCosinus", cos * 100);
+                result.put("face1", face1Base64);
+                result.put("face2", face2Base64);
 
                 Files.deleteIfExists(tempFile1);
                 Files.deleteIfExists(tempFile2);

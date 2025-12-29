@@ -117,6 +117,22 @@ export default function CDV() {
                   <span className="score-label">Score Global</span>
                 </div>
               </div>
+
+              {/* NEW: Detected Faces Section */}
+              <div className="cdv-detected-faces">
+                <h4 className="detected-title">Visages Isolés (Preuve Détection)</h4>
+                <div className="faces-row">
+                  <div className="face-item">
+                    <img src={`data:image/jpeg;base64,${result.face1}`} alt="Face 1" className="detected-face-img" />
+                    <span className="face-tag">Face 1</span>
+                  </div>
+                  <div className="face-item">
+                    <img src={`data:image/jpeg;base64,${result.face2}`} alt="Face 2" className="detected-face-img" />
+                    <span className="face-tag">Face 2</span>
+                  </div>
+                </div>
+              </div>
+
             </div>
           )}
         </div>

@@ -187,6 +187,57 @@
   border: 1px solid rgba(255, 78, 80, 0.3);
 }
 
+.score-item.global {
+  grid-column: span 2;
+  background: rgba(255, 204, 0, 0.1);
+  border: 1px solid rgba(255, 204, 0, 0.2);
+  margin-top: 10px;
+}
+
+.cdv-detected-faces {
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detected-title {
+  color: #00d2ff;
+  font-size: 0.9rem;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+.faces-row {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+}
+
+.face-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.detected-face-img {
+  width: 90px;
+  height: 90px;
+  border-radius: 12px;
+  border: 3px solid #00d2ff;
+  object-fit: cover;
+  background: #000;
+  box-shadow: 0 0 15px rgba(0, 210, 255, 0.3);
+}
+
+.face-tag {
+  font-size: 0.8rem;
+  color: #00d2ff;
+  font-weight: bold;
+}
+
 .cdv-scores {
   display: flex;
   justify-content: center;
