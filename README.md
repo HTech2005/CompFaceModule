@@ -38,9 +38,9 @@ Le système suit un pipeline de traitement rigoureux pour transformer une image 
 *   **B. Redimensionnement Standard (128x128)**
     *   **Comment** : Interpolation des pixels pour atteindre une taille fixe.
     *   **Pourquoi** : Permet la comparaison mathématique de vecteurs de même dimension, quelle que soit la résolution d'origine.
-*   **C. Améliorations du Prétraitement**
-    *   **Flou Gaussien** : Application d'un flou Gaussien (sigma=1.0) pour la réduction du bruit et l'atténuation des détails non pertinents.
-    *   **Égalisation d'Histogramme ImageJ** : Utilisation d'une méthode d'égalisation d'histogramme plus avancée (inspirée d'ImageJ) pour une robustesse accrue aux variations d'éclairage.
+   - Redimensionnement (128x128).
+   - Égalisation d'histogramme ImageJ.
+   - LBP 2D & Histogramme global.
 
 ### 3. Extraction de Caractéristiques (Features)
 *   **A. Histogramme Global (`Histogram.java`)**
@@ -49,7 +49,6 @@ Le système suit un pipeline de traitement rigoureux pour transformer une image 
 *   **B. LBP - Local Binary Pattern (`LBP.java`)**
     *   **Comment** : Compare chaque pixel à ses 8 voisins pour générer un code binaire 8-bits.
     *   **Pourquoi** : C'est le cœur du système. Il capture la **texture fine** (pores de la peau, rides, micro-contours). Très robuste aux changements de lumière.
-    *   **LBP Spatial (Grid 4x4)** : L'image est désormais découpée en 16 zones (grille 4x4) et un histogramme LBP est calculé pour chaque zone. Ces histogrammes sont ensuite concaténés pour former un vecteur de caractéristiques plus riche et plus localisé.
 
 ### 4. Fusion et Normalisation (`Fusion.java` & `NormalizeVector.java`)
 *   **A. Fusion**
@@ -87,17 +86,16 @@ Le système n'utilise plus une simple distance brute, mais une **fusion de score
 *   **Score Cosinus (70%)** : Basé sur l'alignement angulaire des traits faciaux.
 
 ### Formule du Score Global :
-Le système utilise désormais un **LBP Spatial (Spatial blocking)** avec un score fusionné pondéré :
-$$Score_{Global} = (Score_{Euc} \times 0.3) + (Score_{Cos} \times 0.7)$$
+Le système utilise désormais une fusion d'expertises avec un score global pondéré :
+$$Score_{Global} = (Score_{Euc} \times 0.4) + (Score_{Cos} \times 0.6)$$
 
 | Paramètre | Valeur | Description |
 | :--- | :--- | :--- |
-| **Seuil de Décision** | **80.0%** | Score global minimum pour valider l'identité. |
-| **Poids Cosinus** | **70%** | Priorité à la texture (plus robuste aux variations). |
-| **Spatial Grid LBP** | **4x4** | Découpage de l'image en 16 zones pour capturer la structure locale. |
+| **Seuil de Décision** | **75.0%** | Score global minimum pour valider l'identité. |
+| **Poids Cosinus** | **60%** | Priorité à la texture (plus robuste aux variations). |
 
 ### Logique de Verdict :
-- **SI** $Score_{Global} \ge 80\%$ $\rightarrow$ **MATCH (Accès Autorisé)**.
+- **SI** $Score_{Global} \ge 75\%$ $\rightarrow$ **MATCH (Accès Autorisé)**.
 - **SINON** $\rightarrow$ **REFUSÉ**.
 
 ---

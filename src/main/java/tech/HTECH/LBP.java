@@ -40,9 +40,9 @@ public class LBP {
     }
 
     public static double[] histogramLBP(double[][] tlbp) {
-        double[] hist = new double[256];
         int height = tlbp.length;
         int width = tlbp[0].length;
+        double[] hist = new double[256];
 
         for (int j = 0; j < height; j++) {
             for (int i = 0; i < width; i++) {
@@ -51,56 +51,12 @@ public class LBP {
             }
         }
 
-        // Normalisation
-        double sum = 0;
-        for (double v : hist)
-            sum += v;
-        if (sum > 0) {
-            for (int i = 0; i < 256; i++)
-                hist[i] /= sum;
+        double total = width * height;
+        for (int k = 0; k < 256; k++) {
+            hist[k] /= total;
         }
+
         return hist;
     }
 
-    /**
-     * Calcule un histogramme LBP spatial (Blocking)
-     * Divise l'image en gridX * gridY blocs et concatène les histogrammes.
-     */
-    public static double[] spatialHistogramLBP(double[][] tlbp, int gridX, int gridY) {
-        int height = tlbp.length;
-        int width = tlbp[0].length;
-        int blockH = height / gridY;
-        int blockW = width / gridX;
-
-        double[] spatialHist = new double[gridX * gridY * 256];
-        int offset = 0;
-
-        for (int gy = 0; gy < gridY; gy++) {
-            for (int gx = 0; gx < gridX; gx++) {
-                double[] cellHist = new double[256];
-                int yStart = gy * blockH;
-                int xStart = gx * blockW;
-
-                for (int j = yStart; j < yStart + blockH && j < height; j++) {
-                    for (int i = xStart; i < xStart + blockW && i < width; i++) {
-                        int val = (int) tlbp[j][i];
-                        cellHist[val]++;
-                    }
-                }
-
-                // Normalisation locale du bloc
-                double sum = 0;
-                for (double v : cellHist)
-                    sum += v;
-                if (sum > 0) {
-                    for (int k = 0; k < 256; k++) {
-                        spatialHist[offset + k] = cellHist[k] / sum;
-                    }
-                }
-                offset += 256;
-            }
-        }
-
-        return spatialHist;
-    }
 }
