@@ -89,18 +89,19 @@ public class Main {
                     double[] NfusionB = NormalizeVector.normalize(fusionB);
 
                     // --- Décision ---
-                    double distance = Comparaison.distanceKhiCarre(NfusionA, NfusionB);
+                    double distChi2 = Comparaison.distanceKhiCarre(NfusionA, NfusionB);
                     double cosineSim = Comparaison.similitudeCosinus(NfusionA, NfusionB);
+                    double distEucl = Comparaison.distanceEuclidienne(NfusionA, NfusionB);
 
-                    if (Decision.dec(distance, cosineSim))
-                        System.out.println("Décision (Chi-Carré) : Même personne");
+                    if (Decision.dec(distChi2, cosineSim, distEucl))
+                        System.out.println("Décision (Triple Fusion) : Même personne");
                     else
-                        System.out.println("Décision (Chi-Carré) : Personnes différentes");
+                        System.out.println("Décision (Triple Fusion) : Personnes différentes");
 
-                    System.out.println("Score de compatibilité (Texture Chi-2) : "
-                            + Compatibilite.CalculCompatibilite(distance) + " %");
-
-                    System.out.println("Similarité Cosinus : " + (cosineSim * 100) + " %");
+                    double combinedScore = ((1.0 - (distChi2 / 2.0)) * 50.0) + (cosineSim * 30.0)
+                            + ((1.0 - distEucl) * 20.0);
+                    System.out.println(
+                            "Score Global (Triple Fusion) : " + Math.round(combinedScore * 100.0) / 100.0 + " %");
 
                     break;
                 case 2:

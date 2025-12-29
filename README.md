@@ -68,23 +68,24 @@ $$\text{Taux} = (1 - \frac{D}{2}) \times 100$$
 
 ---
 
-## ⚙️ Seuils et Décision Fusionnée (`Decision.java`)
+Le système utilise désormais une **Triple Fusion d'Expertises** pour une fiabilité maximale. Chaque méthode compense les faiblesses des autres :
 
-Le système utilise une **fusion de scores** pour une fiabilité maximale :
+1.  **Texture fine (Chi-Carré $\chi^2$) - 50%** : Analyse microscopique des pores et micro-reliefs. C'est le cœur de la décision.
+2.  **Alignement (Cosinus) - 30%** : Analyse l'angle des traits faciaux. Très robuste aux variations d'éclairage.
+3.  **Géométrie (Euclidienne) - 20%** : Mesure l'écart de forme globale entre les deux signatures.
 
-*   **Score de Texture (Chi-Carré) (60%)** : Priorité à la texture fine du visage.
-*   **Score de Forme (Cosinus) (40%)** : Alignement global des traits.
+### Formule du Score Global Fusionné :
+$$Score_{Global} = (Score_{Chi2} \times 0.5) + (Score_{Cos} \times 0.3) + (Score_{Eucl} \times 0.2)$$
 
-### Formule du Score Global :
-$$Score_{Global} = (Score_{Chi2} \times 0.6) + (Score_{Cos} \times 0.4)$$
-
-| Paramètre | Valeur | Description |
+| Paramètre | Valeurs & Poids | Rôle |
 | :--- | :--- | :--- |
-| **Seuil de Décision** | **75.0%** | Score global minimum pour valider l'identité. |
-| **Poids Chi-Carré** | **60%** | Analyse précise des pores et micro-contours. |
+| **Texture Chi2** | **50%** | Identification précise de la peau/pores. |
+| **Cosinus** | **30%** | Stabilité face aux changements de lumière. |
+| **Euclidien** | **20%** | Vérification de la structure globale. |
+| **Seuil Global** | **75.0%** | Score minimum pour valider le Match. |
 
 ### Logique de Verdict :
-- **SI** $Score_{Global} \ge 75\%$ $\rightarrow$ **MATCH**.
+- **SI** $Score_{Global} \ge 75\%$ $\rightarrow$ **MATCH (Identité Confirmée)**.
 - **SINON** $\rightarrow$ **REFUSÉ**.
 
 ---

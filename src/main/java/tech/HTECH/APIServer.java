@@ -152,18 +152,21 @@ public class APIServer {
                 double[] N1 = NormalizeVector.normalize(features1);
                 double[] N2 = NormalizeVector.normalize(features2);
 
-                double dist = Comparaison.distanceKhiCarre(N1, N2);
+                double distChi2 = Comparaison.distanceKhiCarre(N1, N2);
                 double cos = Comparaison.similitudeCosinus(N1, N2);
-                double score = Compatibilite.CalculCompatibilite(dist);
+                double distEucl = Comparaison.distanceEuclidienne(N1, N2);
+
+                double scoreTexture = Compatibilite.CalculCompatibilite(distChi2);
 
                 // Encodage des visages détectés en Base64 pour prouver que ça marche
                 String face1Base64 = OpenCVUtils.matToBase64(face1);
                 String face2Base64 = OpenCVUtils.matToBase64(face2);
 
                 Map<String, Object> result = new HashMap<>();
-                result.put("match", Decision.dec(dist, cos));
-                result.put("scoreEuclidien", score);
+                result.put("match", Decision.dec(distChi2, cos, distEucl));
+                result.put("scoreEuclidien", scoreTexture); // On garde l'affichage texture/chi2 dominant
                 result.put("scoreCosinus", cos * 100);
+                result.put("scoreGlobal", ((1.0 - (distChi2 / 2.0)) * 50.0 + (cos * 30.0) + (1.0 - distEucl) * 20.0));
                 result.put("face1", face1Base64);
                 result.put("face2", face2Base64);
 
@@ -213,11 +216,12 @@ public class APIServer {
                     double threshold = 70.0;
 
                     for (Map.Entry<String, double[]> entry : databaseFeatures.entrySet()) {
-                        double dist = Comparaison.distanceKhiCarre(features, entry.getValue());
+                        double distChi2 = Comparaison.distanceKhiCarre(features, entry.getValue());
                         double cosSim = Comparaison.similitudeCosinus(features, entry.getValue());
+                        double distEucl = Comparaison.distanceEuclidienne(features, entry.getValue());
 
-                        // Calcul d'un score fusionné pour le classement
-                        double score = (Compatibilite.CalculCompatibilite(dist) * 0.4) + (cosSim * 100.0 * 0.6);
+                        // Calcul d'un score fusionné triple pour le classement
+                        double score = ((1.0 - (distChi2 / 2.0)) * 50.0) + (cosSim * 30.0) + ((1.0 - distEucl) * 20.0);
 
                         if (score > bestScore) {
                             bestScore = score;
@@ -234,15 +238,21 @@ public class APIServer {
                     result.put("score", bestScore);
 
                     // On recalcule les scores individuels pour le meilleur match pour l'affichage
-                    double[] bestFeatures = databaseFeatures.get(bestMatch);
-                    if (bestFeatures != null) {
-                        double bestDist = Comparaison.distanceKhiCarre(features, bestFeatures);
-                        double bestCos = Comparaison.similitudeCosinus(features, bestFeatures);
-                        result.put("scoreEuclidien", Compatibilite.CalculCompatibilite(bestDist));
-                        result.put("scoreCosinus", bestCos * 100.0);
-                    }
+                    double[] bestFeatures = databaseFeatures.get(bestMatch + ".jpg"); // Tentative avec extension
+                    if (bestFeatures == null)
+                        bestFeatures = databaseFeatures.get(bestMatch + ".png");
+                    if (bestFeatures == null)
+                        bestFeatures = databaseFeatures.get(bestMatch);
 
-                    result.put("isMatch", bestScore >= 75.0); // Seuil global fusionné
+                    if (bestFeatures != null) {
+                        double bestChi2 = Comparaison.distanceKhiCarre(features, bestFeatures);
+                        double bestCos = Comparaison.similitudeCosinus(features, bestFeatures);
+                        double bestEucl = Comparaison.distanceEuclidienne(features, bestFeatures);
+
+                        result.put("scoreEuclidien", Compatibilite.CalculCompatibilite(bestChi2));
+                        result.put("scoreCosinus", bestCos * 100.0);
+                        result.put("isMatch", Decision.dec(bestChi2, bestCos, bestEucl));
+                    }
                 }
 
                 res.type("application/json");

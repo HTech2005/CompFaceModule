@@ -135,19 +135,21 @@ public class RealtimeComparator {
                     double[] fused = Fusion.fus(H, LBPH);
                     double[] Nfused = NormalizeVector.normalize(fused);
 
-                    double distance = Comparaison.distanceKhiCarre(Nfused, referenceVector);
+                    double distChi2 = Comparaison.distanceKhiCarre(Nfused, referenceVector);
                     double cosSim = Comparaison.similitudeCosinus(Nfused, referenceVector);
+                    double distEucl = Comparaison.distanceEuclidienne(Nfused, referenceVector);
 
-                    double scoreEuclidien = Compatibilite.CalculCompatibilite(distance);
+                    double scoreTexture = Compatibilite.CalculCompatibilite(distChi2);
                     double scoreCosinus = cosSim * 100.0;
+                    double scoreGlobal = ((1.0 - (distChi2 / 2.0)) * 50.0 + (cosSim * 30.0) + (1.0 - distEucl) * 20.0);
 
                     // Stockage
-                    scoresEuclidien.add(scoreEuclidien);
+                    scoresEuclidien.add(scoreGlobal); // On stocke le score fusionné pour le résultat final
                     scoresCosinus.add(scoreCosinus);
                     totalFramesProcessed++;
 
                     // Affichage Temps Réel
-                    boolean isMatch = Decision.dec(distance, cosSim);
+                    boolean isMatch = Decision.dec(distChi2, cosSim, distEucl);
                     Scalar resultColor = isMatch ? new Scalar(0, 255, 0, 0) : new Scalar(0, 0, 255, 0); // Vert ou Rouge
 
                     // Cadre autour du visage détecté
@@ -156,12 +158,16 @@ public class RealtimeComparator {
                             0);
 
                     // Infos
-                    String info1 = String.format("Euc: %.1f%%", scoreEuclidien);
+                    String info1 = String.format("Texture Chi2: %.1f%%", scoreTexture);
                     String info2 = String.format("Cos: %.1f%%", scoreCosinus);
+                    String info3 = String.format("Global: %.1f%%", scoreGlobal);
 
-                    opencv_imgproc.putText(frame, info1, new Point(r.x(), r.y() - 25),
+                    opencv_imgproc.putText(frame, info1, new Point(r.x(), r.y() - 45),
                             opencv_imgproc.FONT_HERSHEY_PLAIN, 1.2, resultColor, 2, opencv_imgproc.LINE_AA, false);
-                    opencv_imgproc.putText(frame, info2, new Point(r.x(), r.y() - 5), opencv_imgproc.FONT_HERSHEY_PLAIN,
+                    opencv_imgproc.putText(frame, info2, new Point(r.x(), r.y() - 25),
+                            opencv_imgproc.FONT_HERSHEY_PLAIN,
+                            1.2, resultColor, 2, opencv_imgproc.LINE_AA, false);
+                    opencv_imgproc.putText(frame, info3, new Point(r.x(), r.y() - 5), opencv_imgproc.FONT_HERSHEY_PLAIN,
                             1.2, resultColor, 2, opencv_imgproc.LINE_AA, false);
                 }
             }
