@@ -102,13 +102,19 @@ export default function CDV() {
                   <span className="score-value" style={{ color: '#00ff88' }}>
                     {result.scoreEuclidien.toFixed(1)}%
                   </span>
-                  <span className="score-label">Score Global</span>
+                  <span className="score-label">Taux Euclidien</span>
                 </div>
                 <div className="score-item">
                   <span className="score-value" style={{ color: '#00c6ff' }}>
                     {result.scoreCosinus.toFixed(1)}%
                   </span>
-                  <span className="score-label">Similarité Cosinus</span>
+                  <span className="score-label">Similitude Cosinus</span>
+                </div>
+                <div className="score-item global">
+                  <span className="score-value" style={{ color: '#ffcc00' }}>
+                    {((result.scoreEuclidien * 0.4) + (result.scoreCosinus * 0.6)).toFixed(1)}%
+                  </span>
+                  <span className="score-label">Score Global</span>
                 </div>
               </div>
             </div>

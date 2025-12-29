@@ -162,9 +162,22 @@ export default function TRRecognition() {
                             <div className="tr-id-info">
                                 <h3>{searchResult.isMatch ? searchResult.bestMatch : "Inconnu"}</h3>
                                 <div className="tr-score-bar">
-                                    <div className="tr-score-fill" style={{ width: `${searchResult.score}%`, background: searchResult.isMatch ? '#00d2ff' : '#ff416c' }}></div>
+                                    <div className="tr-score-fill" style={{ width: `${searchResult.score}%`, background: searchResult.isMatch ? '#ffcc00' : '#ff416c' }}></div>
                                 </div>
-                                <span className="tr-score-text">Similitude : {Math.round(searchResult.score)}%</span>
+                                <div className="tr-detailed-scores">
+                                    <div className="tr-detail-item">
+                                        <span className="detail-label">Global:</span>
+                                        <span className="detail-value">{Math.round(searchResult.score)}%</span>
+                                    </div>
+                                    <div className="tr-detail-item">
+                                        <span className="detail-label">Euclidien:</span>
+                                        <span className="detail-value">{Math.round(searchResult.scoreEuclidien)}%</span>
+                                    </div>
+                                    <div className="tr-detail-item">
+                                        <span className="detail-label">Cosinus:</span>
+                                        <span className="detail-value">{Math.round(searchResult.scoreCosinus)}%</span>
+                                    </div>
+                                </div>
 
                                 <div className="tr-status-badge">
                                     {searchResult.isMatch ? "✅ ACCÈS AUTORISÉ" : "⛔ NON RECONNU"}

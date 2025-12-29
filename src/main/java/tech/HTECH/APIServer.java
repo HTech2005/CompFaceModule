@@ -226,6 +226,16 @@ public class APIServer {
 
                     result.put("bestMatch", bestMatch.replaceFirst("[.][^.]+$", "")); // Remove ext
                     result.put("score", bestScore);
+
+                    // On recalcule les scores individuels pour le meilleur match pour l'affichage
+                    double[] bestFeatures = databaseFeatures.get(bestMatch);
+                    if (bestFeatures != null) {
+                        double bestDist = Comparaison.distanceEuclidienne(features, bestFeatures);
+                        double bestCos = Comparaison.similitudeCosinus(features, bestFeatures);
+                        result.put("scoreEuclidien", Compatibilite.CalculCompatibilite(bestDist));
+                        result.put("scoreCosinus", bestCos * 100.0);
+                    }
+
                     result.put("isMatch", bestScore >= 75.0); // Seuil global fusionné
                 }
 
