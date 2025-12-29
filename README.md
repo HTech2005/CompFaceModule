@@ -11,11 +11,7 @@ Ce projet est une solution complète de biométrie faciale intégrant un Backend
 *   **Fonction** : Compare deux images uploadées.
 *   **Sortie** : Scores de similarité (Euclidien & Cosinus) et verdict.
 
-### 2. Analyse Temps Réel (SV - Scanner Visage)
-*   **Interface** : `/sv-analysis`
-*   **Fonction** : Analyse un flux webcam pour mesurer la structure morphologique.
-
-### 3. Identification Temps Réel (TR)
+### 2. Identification Temps Réel (TR)
 *   **Interface** : `/tr-recognition`
 *   **Fonction** : Identifie une personne en direct par rapport à la base de données (`src/main/bdd`).
 
@@ -62,9 +58,14 @@ Mesure l'angle entre les deux vecteurs (l'alignement des traits).
 $$s(A, B) = \frac{\sum_{i=1}^{n} A_i \cdot B_i}{\sqrt{\sum_{i=1}^{n} A_i^2} \cdot \sqrt{\sum_{i=1}^{n} B_i^2}}$$
 > Résultat entre **0** (différent) et **1** (parfaitement aligné).
 
+### Distance Euclidienne
+Mesure l'écart de forme géométrique globale.
+$$D_{Eucl}(A, B) = \sqrt{\sum_{i=1}^{n} (A_i - B_i)^2}$$
+
 ### Taux de Compatibilité
-Traduction humaine de la distance Chi-Carré.
-$$\text{Taux} = (1 - \frac{D}{2}) \times 100$$
+Traduction humaine des distances en scores de 0 à 100%.
+- **Chi-Carré** : $Score = (1 - \frac{D}{2}) \times 100$
+- **Euclidien** : $Score = (1 - D) \times 100$
 
 ---
 
@@ -85,14 +86,10 @@ $$Score_{Global} = (Score_{Chi2} \times 0.5) + (Score_{Cos} \times 0.3) + (Score
 | **Seuil Global** | **90.0%** | Score minimum pour valider le Match. |
 
 ### Logique de Verdict :
-- **SI** $Score_{Global} \ge 75\%$ $\rightarrow$ **MATCH (Identité Confirmée)**.
+- **SI** $Score_{Global} \ge 90.0\%$ $\rightarrow$ **MATCH (Identité Confirmée)**.
 - **SINON** $\rightarrow$ **REFUSÉ**.
 
 ---
-
-## 🩺 Analyse Morphologique (`FaceAnalyzer.java`)
-*   **Comment** : Détection des coordonnées des yeux et de la bouche.
-*   **Pourquoi** : Couche de sécurité supplémentaire pour valider la structure anatomique (écart inter-oculaire, largeur de bouche).
 
 ---
 
