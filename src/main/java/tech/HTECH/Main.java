@@ -172,7 +172,7 @@ public class Main {
 
                         // Décision selon le score (Ajusté selon les nouveaux seuils, ex 70% pour 0.30
                         // distance)
-                        if (finalAverage >= 75.0) {
+                        if (finalAverage >= 70.0) {
                             System.out.println("RÉSULTAT : MATCH → ACCÈS AUTORISÉ");
                         } else if (finalAverage >= 50.0) {
                             System.out.println("RÉSULTAT : DOUTEUX (score moyen trop bas)");

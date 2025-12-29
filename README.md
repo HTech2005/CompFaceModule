@@ -80,13 +80,13 @@ $$\text{Taux} = (1 - d) \times 100$$
 
 ## ⚙️ Seuils et Décision (`Comparaison.java` & `Decision.java`)
 
-Le système est calibré sur un **Seuil (Threshold)** de sécurité de **0.25** :
+Le système est calibré sur un **Seuil (Threshold)** de sécurité de **0.30** :
 
 | État | Distance | Taux | Verdict |
 | :--- | :--- | :--- | :--- |
 | **Match Parfait** | 0.00 | 100% | ACCÈS AUTORISÉ |
-| **Limite Acceptation** | **0.25** | **75%** | ACCÈS AUTORISÉ |
-| **Douteux** | 0.30 | 70% | REFUSÉ |
+| **Limite Acceptation** | **0.30** | **70%** | ACCÈS AUTORISÉ |
+| **Douteux** | 0.35 | 65% | REFUSÉ |
 | **Rejeté** | > 0.40 | < 60% | REFUSÉ |
 
 ---
