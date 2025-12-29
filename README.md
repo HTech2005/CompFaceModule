@@ -26,52 +26,74 @@ Ce projet est une solution complète de biométrie faciale intégrant un Backend
 Le système suit un pipeline de traitement rigoureux pour transformer une image brute en une signature biométrique unique.
 
 ### 1. Détection du Visage (Haar Cascade)
-*   **Comment** : Utilisation de l'algorithme de **Viola-Jones**. Le système scanne l'image pour trouver des contrastes spécifiques (yeux plus sombres que le front, etc.).
-*   **Pourquoi** : Pour isoler le visage et éliminer le "bruit" (fond, vêtements) afin d'optimiser les calculs.
+*   **Comment ça marche ?** : Le système utilise l'algorithme de **Viola-Jones** via les classificateurs "Haar Cascade" d'OpenCV. Il scanne l'image avec des fenêtres de différentes tailles et cherche des motifs de contraste spécifiques (ex: la zone des yeux est souvent plus sombre que les pommettes et le front).
+*   **Pourquoi le fait-on ?** :
+    *   **Isolation** : Pour éliminer tout ce qui n'est pas le visage (fonds, vêtements).
+    *   **Optimisation** : Traiter uniquement la zone d'intérêt (ROI) réduit drastiquement les calculs.
 
-### 2. Prétraitement (`Pretraitement.java`)
-*   **Gris** : On retire la couleur car elle n'est pas fiable biométriquement (dépend de la lampe). On garde la **structure**.
-*   **Resize (128x128)** : Normalisation de la taille pour permettre la comparaison mathématique de vecteurs de même dimension.
-*   **Égalisation d'Histogramme** : On étire le contraste. **Pourquoi ?** Pour que le système reconnaisse la même personne qu'il fasse jour ou nuit.
+### 2. Prétraitement de l'Image (`Pretraitement.java`)
+*   **A. Conversion en Niveaux de Gris**
+    *   **Comment** : Fusion des canaux RVB en une seule valeur d'intensité.
+    *   **Pourquoi** : La couleur n'est pas fiable (dépend de l'éclairage). Les niveaux de gris préservent la **structure**.
+*   **B. Redimensionnement Standard (128x128)**
+    *   **Comment** : Interpolation des pixels pour atteindre une taille fixe.
+    *   **Pourquoi** : Permet la comparaison mathématique de vecteurs de même dimension, quelle que soit la résolution d'origine.
+*   **C. Égalisation d'Histogramme**
+    *   **Comment** : Étirement du spectre de gris de 0 à 255.
+    *   **Pourquoi** : **Normaliser l'éclairage**. Indispensable pour reconnaître une personne dans différentes conditions lumineuses.
 
-### 3. Extraction de Caractéristiques
-*   **Histogramme Global** : Compte la distribution des intensités. Capture la **forme générale**.
-*   **LBP (Local Binary Pattern)** : Analyse la relation entre un pixel et ses voisins.
-    *   **Comment** : On génère un code binaire 8-bits par pixel.
-    *   **Pourquoi** : Capture la **texture fine** (pores, rides). C'est la partie la plus précise de la reconnaissance.
+### 3. Extraction de Caractéristiques (Features)
+*   **A. Histogramme Global (`Histogram.java`)**
+    *   **Comment** : Distribution statistique des niveaux de gris.
+    *   **Pourquoi** : Capture la **forme générale** et la distribution lumineuse du visage.
+*   **B. LBP - Local Binary Pattern (`LBP.java`)**
+    *   **Comment** : Compare chaque pixel à ses 8 voisins pour générer un code binaire 8-bits.
+    *   **Pourquoi** : C'est le cœur du système. Il capture la **texture fine** (pores de la peau, rides, micro-contours). Très robuste aux changements de lumière.
 
-### 4. Fusion et Normalisation
-*   **Fusion** : Combinaison des vecteur Histogramme + LBP.
-*   **Normalisation** : Conversion du vecteur pour que sa norme soit égale à 1. **Pourquoi ?** Pour comparer des "directions" de traits faciaux et non des valeurs brutes de pixels.
+### 4. Fusion et Normalisation (`Fusion.java` & `NormalizeVector.java`)
+*   **A. Fusion**
+    *   **Comment** : Concaténation des vecteurs Histogramme et LBP.
+    *   **Pourquoi** : Combine les informations de forme globale et de texture locale pour une signature complète.
+*   **B. Normalisation**
+    *   **Comment** : Division par la norme Euclidienne.
+    *   **Pourquoi** : Transforme le vecteur en une "direction" mathématique pure. Garantit que la distance dépend de la similitude des traits et non de l'intensité brute.
 
 ---
 
 ## 📊 Formules Mathématiques
 
 ### Distance Euclidienne
-C'est la mesure de l'écart direct entre deux signatures $A$ et $B$ dans un espace à $n$ dimensions.
+Mesure de l'écart direct entre deux signatures $A$ et $B$.
 $$d(A, B) = \sqrt{\sum_{i=1}^{n} (A_i - B_i)^2}$$
-> Plus $d$ tend vers **0**, plus les visages sont **identiques**.
+> Plus $d$ est proche de **0**, plus les visages sont **identiques**.
 
 ### Similarité Cosinus
-Elle mesure l'angle entre les deux vecteurs de caractéristiques. Contrairement à la distance qui mesure l'écart "physique", le cosinus mesure l'alignement des traits.
+Mesure l'angle entre les deux vecteurs (l'alignement des traits).
 $$s(A, B) = \frac{\sum_{i=1}^{n} A_i \cdot B_i}{\sqrt{\sum_{i=1}^{n} A_i^2} \cdot \sqrt{\sum_{i=1}^{n} B_i^2}}$$
-> Le résultat varie de **0** (totalement différent) à **1** (parfaitement aligné).
+> Résultat entre **0** (différent) et **1** (parfaitement aligné).
+
+### Taux de Compatibilité
+Traduction humaine de la distance.
+$$\text{Taux} = (1 - d) \times 100$$
 
 ---
 
-## ⚙️ Seuils et Décision
+## ⚙️ Seuils et Décision (`Comparaison.java` & `Decision.java`)
 
-Le système utilise un **Seuil (Threshold)** critique pour valider une identité :
+Le système est calibré sur un **Seuil (Threshold)** de sécurité de **0.25** :
 
-| Paramètre | Valeur | Description |
-| :--- | :--- | :--- |
-| **Seuil de Distance** | **0.25** | Limite maximale pour un "Match". |
-| **Taux de Compatibilité** | **75%** | Correspondance minimale exigée ($ (1 - d) \times 100 $). |
+| État | Distance | Taux | Verdict |
+| :--- | :--- | :--- | :--- |
+| **Match Parfait** | 0.00 | 100% | ACCÈS AUTORISÉ |
+| **Limite Acceptation** | **0.25** | **75%** | ACCÈS AUTORISÉ |
+| **Douteux** | 0.30 | 70% | REFUSÉ |
+| **Rejeté** | > 0.40 | < 60% | REFUSÉ |
 
-### Logique de Décision :
-- **SI** Distance $< 0.25$ $\rightarrow$ **MATCH (Accès Autorisé)**.
-- **SINON** $\rightarrow$ **REFUSÉ**.
+---
+
+## 🩺 Analyse Morphologique (`FaceAnalyzer.java`)
+*   **Comment** : Détection des coordonnées des yeux et de la bouche.
+*   **Pourquoi** : Couche de sécurité supplémentaire pour valider la structure anatomique (écart inter-oculaire, largeur de bouche).
 
 ---
 
