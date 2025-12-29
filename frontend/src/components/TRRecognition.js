@@ -162,12 +162,16 @@ export default function TRRecognition() {
                             <div className="tr-id-info">
                                 <h3>{searchResult.isMatch ? searchResult.bestMatch : "Inconnu"}</h3>
                                 <div className="tr-score-bar">
-                                    <div className="tr-score-fill" style={{ width: `${searchResult.score}%`, background: searchResult.isMatch ? '#ffcc00' : '#ff416c' }}></div>
+                                    <div className="tr-score-fill" style={{ width: `${searchResult.scoreGlobal}%`, background: searchResult.isMatch ? '#ffcc00' : '#ff416c' }}></div>
                                 </div>
                                 <div className="tr-detailed-scores">
                                     <div className="tr-detail-item">
                                         <span className="detail-label">Global:</span>
-                                        <span className="detail-value">{Math.round(searchResult.score)}%</span>
+                                        <span className="detail-value">{Math.round(searchResult.scoreGlobal)}%</span>
+                                    </div>
+                                    <div className="tr-detail-item">
+                                        <span className="detail-label">Chi-2:</span>
+                                        <span className="detail-value">{Math.round(searchResult.scoreChi2)}%</span>
                                     </div>
                                     <div className="tr-detail-item">
                                         <span className="detail-label">Euclidien:</span>

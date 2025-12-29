@@ -162,11 +162,15 @@ public class APIServer {
                 String face1Base64 = OpenCVUtils.matToBase64(face1);
                 String face2Base64 = OpenCVUtils.matToBase64(face2);
 
+                double scoreEucl = (1.0 - distEucl) * 100.0;
+                double globalScore = (scoreTexture * 0.5) + (cos * 100.0 * 0.3) + (scoreEucl * 0.2);
+
                 Map<String, Object> result = new HashMap<>();
                 result.put("match", Decision.dec(distChi2, cos, distEucl));
-                result.put("scoreEuclidien", scoreTexture); // On garde l'affichage texture/chi2 dominant
+                result.put("scoreChi2", scoreTexture);
+                result.put("scoreEuclidien", scoreEucl);
                 result.put("scoreCosinus", cos * 100);
-                result.put("scoreGlobal", ((1.0 - (distChi2 / 2.0)) * 50.0 + (cos * 30.0) + (1.0 - distEucl) * 20.0));
+                result.put("scoreGlobal", globalScore);
                 result.put("face1", face1Base64);
                 result.put("face2", face2Base64);
 
@@ -249,8 +253,14 @@ public class APIServer {
                         double bestCos = Comparaison.similitudeCosinus(features, bestFeatures);
                         double bestEucl = Comparaison.distanceEuclidienne(features, bestFeatures);
 
-                        result.put("scoreEuclidien", Compatibilite.CalculCompatibilite(bestChi2));
+                        double scoreEucl = (1.0 - bestEucl) * 100.0;
+                        double globalScore = (Compatibilite.CalculCompatibilite(bestChi2) * 0.5)
+                                + (bestCos * 100.0 * 0.3) + (scoreEucl * 0.2);
+
+                        result.put("scoreChi2", Compatibilite.CalculCompatibilite(bestChi2));
+                        result.put("scoreEuclidien", scoreEucl);
                         result.put("scoreCosinus", bestCos * 100.0);
+                        result.put("scoreGlobal", globalScore);
                         result.put("isMatch", Decision.dec(bestChi2, bestCos, bestEucl));
                     }
                 }

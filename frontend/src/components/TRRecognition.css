@@ -259,10 +259,11 @@
 }
 
 .tr-detailed-scores {
-    display: flex;
-    justify-content: space-between;
-    margin: 10px 0;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin: 15px 0;
+    gap: 10px;
+    width: 100%;
 }
 
 .tr-detail-item {
