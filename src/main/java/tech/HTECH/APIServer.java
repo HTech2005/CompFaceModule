@@ -61,7 +61,7 @@ public class APIServer {
                             if (face != null) {
                                 ImageProcessor ip = Pretraitement.pt(OpenCVUtils.matToImageProcessor(face));
                                 double[] h = Histogram.histo(ip);
-                                double[] lbp = LBP.histogramLBP(LBP.LBP2D(ip));
+                                double[] lbp = LBP.spatialHistogramLBP(LBP.LBP2D(ip), 4, 4);
                                 double[] fusion = Fusion.fus(h, lbp);
                                 double[] normalized = NormalizeVector.normalize(fusion);
                                 databaseFeatures.put(f.getName(), normalized);
@@ -146,8 +146,8 @@ public class APIServer {
                 ImageProcessor ip1 = Pretraitement.pt(OpenCVUtils.matToImageProcessor(face1));
                 ImageProcessor ip2 = Pretraitement.pt(OpenCVUtils.matToImageProcessor(face2));
 
-                double[] features1 = Fusion.fus(Histogram.histo(ip1), LBP.histogramLBP(LBP.LBP2D(ip1)));
-                double[] features2 = Fusion.fus(Histogram.histo(ip2), LBP.histogramLBP(LBP.LBP2D(ip2)));
+                double[] features1 = Fusion.fus(Histogram.histo(ip1), LBP.spatialHistogramLBP(LBP.LBP2D(ip1), 4, 4));
+                double[] features2 = Fusion.fus(Histogram.histo(ip2), LBP.spatialHistogramLBP(LBP.LBP2D(ip2), 4, 4));
 
                 double[] N1 = NormalizeVector.normalize(features1);
                 double[] N2 = NormalizeVector.normalize(features2);
@@ -201,7 +201,7 @@ public class APIServer {
                     // Extract features
                     ImageProcessor ip = Pretraitement.pt(OpenCVUtils.matToImageProcessor(face));
                     double[] h = Histogram.histo(ip);
-                    double[] lbp = LBP.histogramLBP(LBP.LBP2D(ip));
+                    double[] lbp = LBP.spatialHistogramLBP(LBP.LBP2D(ip), 4, 4);
                     double[] fusion = Fusion.fus(h, lbp);
                     double[] features = NormalizeVector.normalize(fusion);
 

@@ -38,9 +38,9 @@ Le système suit un pipeline de traitement rigoureux pour transformer une image 
 *   **B. Redimensionnement Standard (128x128)**
     *   **Comment** : Interpolation des pixels pour atteindre une taille fixe.
     *   **Pourquoi** : Permet la comparaison mathématique de vecteurs de même dimension, quelle que soit la résolution d'origine.
-*   **C. Égalisation d'Histogramme**
-    *   **Comment** : Étirement du spectre de gris de 0 à 255.
-    *   **Pourquoi** : **Normaliser l'éclairage**. Indispensable pour reconnaître une personne dans différentes conditions lumineuses.
+*   **C. Améliorations du Prétraitement**
+    *   **Flou Gaussien** : Application d'un flou Gaussien (sigma=1.0) pour la réduction du bruit et l'atténuation des détails non pertinents.
+    *   **Égalisation d'Histogramme ImageJ** : Utilisation d'une méthode d'égalisation d'histogramme plus avancée (inspirée d'ImageJ) pour une robustesse accrue aux variations d'éclairage.
 
 ### 3. Extraction de Caractéristiques (Features)
 *   **A. Histogramme Global (`Histogram.java`)**
@@ -49,6 +49,7 @@ Le système suit un pipeline de traitement rigoureux pour transformer une image 
 *   **B. LBP - Local Binary Pattern (`LBP.java`)**
     *   **Comment** : Compare chaque pixel à ses 8 voisins pour générer un code binaire 8-bits.
     *   **Pourquoi** : C'est le cœur du système. Il capture la **texture fine** (pores de la peau, rides, micro-contours). Très robuste aux changements de lumière.
+    *   **LBP Spatial (Grid 4x4)** : L'image est désormais découpée en 16 zones (grille 4x4) et un histogramme LBP est calculé pour chaque zone. Ces histogrammes sont ensuite concaténés pour former un vecteur de caractéristiques plus riche et plus localisé.
 
 ### 4. Fusion et Normalisation (`Fusion.java` & `NormalizeVector.java`)
 *   **A. Fusion**
@@ -82,19 +83,21 @@ $$\text{Taux} = (1 - d) \times 100$$
 
 Le système n'utilise plus une simple distance brute, mais une **fusion de scores** pour une fiabilité maximale :
 
-*   **Score Euclidien (40%)** : Basé sur la distance $d$ entre les vecteurs.
-*   **Score Cosinus (60%)** : Basé sur l'alignement angulaire des traits faciaux.
+*   **Score Euclidien (30%)** : Basé sur la distance $d$ entre les vecteurs.
+*   **Score Cosinus (70%)** : Basé sur l'alignement angulaire des traits faciaux.
 
 ### Formule du Score Global :
-$$Score_{Global} = (Score_{Euc} \times 0.4) + (Score_{Cos} \times 0.6)$$
+Le système utilise désormais un **LBP Spatial (Spatial blocking)** avec un score fusionné pondéré :
+$$Score_{Global} = (Score_{Euc} \times 0.3) + (Score_{Cos} \times 0.7)$$
 
 | Paramètre | Valeur | Description |
 | :--- | :--- | :--- |
-| **Seuil de Décision** | **75.0%** | Score global minimum pour valider l'identité. |
-| **Poids Cosinus** | **60%** | Priorité à la texture (plus robuste aux variations). |
+| **Seuil de Décision** | **80.0%** | Score global minimum pour valider l'identité. |
+| **Poids Cosinus** | **70%** | Priorité à la texture (plus robuste aux variations). |
+| **Spatial Grid LBP** | **4x4** | Découpage de l'image en 16 zones pour capturer la structure locale. |
 
 ### Logique de Verdict :
-- **SI** $Score_{Global} \ge 75\%$ $\rightarrow$ **MATCH (Accès Autorisé)**.
+- **SI** $Score_{Global} \ge 80\%$ $\rightarrow$ **MATCH (Accès Autorisé)**.
 - **SINON** $\rightarrow$ **REFUSÉ**.
 
 ---
@@ -120,4 +123,4 @@ npm start
 
 ---
 
-© 2024 Tech HTECH - Module de Compétition Faciale
+© 2025 Tech HTECH - Module de Compétition Faciale

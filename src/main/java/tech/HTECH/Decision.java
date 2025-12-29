@@ -9,11 +9,10 @@ public class Decision {
         double scoreCos = cosineSim * 100.0;
 
         // Score fusionné (moyenne pondérée)
-        // On accorde un peu plus de poids au Cosinus car il est plus robuste aux
-        // variations d'intensité
-        double globalScore = (scoreEucl * 0.4) + (scoreCos * 0.6);
+        // On accorde plus de poids au Cosinus (70%) pour réduire les faux positifs
+        double globalScore = (scoreEucl * 0.3) + (scoreCos * 0.7);
 
-        double seuilGlobal = 75.0; // Seuil recommandé après fusion
+        double seuilGlobal = 80.0; // Seuil augmenté pour réduire les faux positifs
 
         return globalScore >= seuilGlobal;
     }

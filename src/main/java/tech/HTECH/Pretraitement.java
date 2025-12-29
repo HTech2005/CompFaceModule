@@ -18,10 +18,11 @@ public class Pretraitement {
 
         ip = ip.convertToByte(true); // convertit encore pour être sûr
 
-        ip = ip.duplicate(); // copie finale
+        // Flou gaussien pour réduire le bruit (réduit les faux négatifs)
+        ip.blurGaussian(1.0);
+
         // ImageJ 1.54e n'a pas de equalizeHistogram() directement
         // Pour égaliser, on utilise le plugin d'ImageJ :
-        // ip.equalize() peut être utilisé si tu importes ij.plugin.filter.ContrastEnhancer
         try {
             ij.plugin.ContrastEnhancer ce = new ij.plugin.ContrastEnhancer();
             ce.equalize(ip);
