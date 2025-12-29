@@ -38,7 +38,10 @@ Le système suit un pipeline de traitement rigoureux pour transformer une image 
 *   **B. Redimensionnement Standard (128x128)**
     *   **Comment** : Interpolation des pixels pour atteindre une taille fixe.
     *   **Pourquoi** : Permet la comparaison mathématique de vecteurs de même dimension.
-*   **C. Égalisation d'Histogramme**
+*   **C. Recadrage "Cœur de Visage" (Tighter Crop)**
+    *   **Comment** : Réduction du rectangle de détection de **15%** sur chaque bord après la détection.
+    *   **Pourquoi** : Élimine les cheveux, les oreilles et le fond pour ne garder que les traits discriminants (yeux, nez, bouche). Réduit drastiquement les faux positifs.
+*   **D. Égalisation d'Histogramme**
     *   **Comment** : Étirement dynamique via ContrastEnhancer.
     *   **Pourquoi** : Normalise l'éclairage pour une robustesse accrue.
 
@@ -49,10 +52,10 @@ Le système suit un pipeline de traitement rigoureux pour transformer une image 
 
 ## 📊 Formules Mathématiques
 
-### Distance Euclidienne
-Mesure de l'écart direct entre deux signatures $A$ et $B$.
-$$d(A, B) = \sqrt{\sum_{i=1}^{n} (A_i - B_i)^2}$$
-> Plus $d$ est proche de **0**, plus les visages sont **identiques**.
+### Distance Chi-Carré ($\chi^2$)
+Mesure statistique pour comparer des histogrammes de texture (LBP).
+$$D(A, B) = \sum \frac{(A_i - B_i)^2}{A_i + B_i}$$
+> Plus robuste aux variations de lumière et plus sensible aux détails fins que l'Euclidienne.
 
 ### Similarité Cosinus
 Mesure l'angle entre les deux vecteurs (l'alignement des traits).
@@ -60,8 +63,8 @@ $$s(A, B) = \frac{\sum_{i=1}^{n} A_i \cdot B_i}{\sqrt{\sum_{i=1}^{n} A_i^2} \cdo
 > Résultat entre **0** (différent) et **1** (parfaitement aligné).
 
 ### Taux de Compatibilité
-Traduction humaine de la distance.
-$$\text{Taux} = (1 - d) \times 100$$
+Traduction humaine de la distance Chi-Carré.
+$$\text{Taux} = (1 - \frac{D}{2}) \times 100$$
 
 ---
 
@@ -69,16 +72,16 @@ $$\text{Taux} = (1 - d) \times 100$$
 
 Le système utilise une **fusion de scores** pour une fiabilité maximale :
 
-*   **Score Euclidien (60%)** : Priorité à la forme globale comme demandé.
-*   **Score Cosinus (40%)** : Texture fine pour la robustesse résiduelle.
+*   **Score de Texture (Chi-Carré) (60%)** : Priorité à la texture fine du visage.
+*   **Score de Forme (Cosinus) (40%)** : Alignement global des traits.
 
 ### Formule du Score Global :
-$$Score_{Global} = (Score_{Euc} \times 0.6) + (Score_{Cos} \times 0.4)$$
+$$Score_{Global} = (Score_{Chi2} \times 0.6) + (Score_{Cos} \times 0.4)$$
 
 | Paramètre | Valeur | Description |
 | :--- | :--- | :--- |
 | **Seuil de Décision** | **75.0%** | Score global minimum pour valider l'identité. |
-| **Poids Cosinus** | **40%** | Texture locale. |
+| **Poids Chi-Carré** | **60%** | Analyse précise des pores et micro-contours. |
 
 ### Logique de Verdict :
 - **SI** $Score_{Global} \ge 75\%$ $\rightarrow$ **MATCH**.

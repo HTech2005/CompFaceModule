@@ -1,14 +1,32 @@
 package tech.HTECH;
 
 public class Comparaison {
-    public static double distanceEuclidienne(double[] A, double[] B) {
-        double som = 0;
+    /*
+     * public static double distanceEuclidienne(double[] A, double[] B) {
+     * double som = 0;
+     * 
+     * for (int i = 0; i < A.length; i++) {
+     * som = som + (A[i] - B[i]) * (A[i] - B[i]);
+     * }
+     * 
+     * return Math.sqrt(som);
+     * }
+     */
 
+    /**
+     * Calcule la distance Chi-Carré (Chi-Square) entre deux histogrammes.
+     * Idéal pour comparer des textures LBP.
+     */
+    public static double distanceKhiCarre(double[] A, double[] B) {
+        double som = 0.0;
         for (int i = 0; i < A.length; i++) {
-            som = som + (A[i] - B[i]) * (A[i] - B[i]);
+            double num = (A[i] - B[i]) * (A[i] - B[i]);
+            double den = A[i] + B[i];
+            if (den > 1e-10) { // Éviter division par zéro
+                som += num / den;
+            }
         }
-
-        return Math.sqrt(som);
+        return som;
     }
 
     public static double similitudeCosinus(double[] A, double[] B) {

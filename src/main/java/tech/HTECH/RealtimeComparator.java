@@ -135,7 +135,7 @@ public class RealtimeComparator {
                     double[] fused = Fusion.fus(H, LBPH);
                     double[] Nfused = NormalizeVector.normalize(fused);
 
-                    double distance = Comparaison.distanceEuclidienne(Nfused, referenceVector);
+                    double distance = Comparaison.distanceKhiCarre(Nfused, referenceVector);
                     double cosSim = Comparaison.similitudeCosinus(Nfused, referenceVector);
 
                     double scoreEuclidien = Compatibilite.CalculCompatibilite(distance);

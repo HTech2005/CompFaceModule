@@ -152,7 +152,7 @@ public class APIServer {
                 double[] N1 = NormalizeVector.normalize(features1);
                 double[] N2 = NormalizeVector.normalize(features2);
 
-                double dist = Comparaison.distanceEuclidienne(N1, N2);
+                double dist = Comparaison.distanceKhiCarre(N1, N2);
                 double cos = Comparaison.similitudeCosinus(N1, N2);
                 double score = Compatibilite.CalculCompatibilite(dist);
 
@@ -213,7 +213,7 @@ public class APIServer {
                     double threshold = 70.0;
 
                     for (Map.Entry<String, double[]> entry : databaseFeatures.entrySet()) {
-                        double dist = Comparaison.distanceEuclidienne(features, entry.getValue());
+                        double dist = Comparaison.distanceKhiCarre(features, entry.getValue());
                         double cosSim = Comparaison.similitudeCosinus(features, entry.getValue());
 
                         // Calcul d'un score fusionné pour le classement
@@ -236,7 +236,7 @@ public class APIServer {
                     // On recalcule les scores individuels pour le meilleur match pour l'affichage
                     double[] bestFeatures = databaseFeatures.get(bestMatch);
                     if (bestFeatures != null) {
-                        double bestDist = Comparaison.distanceEuclidienne(features, bestFeatures);
+                        double bestDist = Comparaison.distanceKhiCarre(features, bestFeatures);
                         double bestCos = Comparaison.similitudeCosinus(features, bestFeatures);
                         result.put("scoreEuclidien", Compatibilite.CalculCompatibilite(bestDist));
                         result.put("scoreCosinus", bestCos * 100.0);

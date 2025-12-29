@@ -89,15 +89,15 @@ public class Main {
                     double[] NfusionB = NormalizeVector.normalize(fusionB);
 
                     // --- Décision ---
-                    double distance = Comparaison.distanceEuclidienne(NfusionA, NfusionB);
+                    double distance = Comparaison.distanceKhiCarre(NfusionA, NfusionB);
                     double cosineSim = Comparaison.similitudeCosinus(NfusionA, NfusionB);
 
                     if (Decision.dec(distance, cosineSim))
-                        System.out.println("Décision (Euclidienne) : Même personne");
+                        System.out.println("Décision (Chi-Carré) : Même personne");
                     else
-                        System.out.println("Décision (Euclidienne) : Personnes différentes");
+                        System.out.println("Décision (Chi-Carré) : Personnes différentes");
 
-                    System.out.println("Score de compatibilité (Euclidien) : "
+                    System.out.println("Score de compatibilité (Texture Chi-2) : "
                             + Compatibilite.CalculCompatibilite(distance) + " %");
 
                     System.out.println("Similarité Cosinus : " + (cosineSim * 100) + " %");
@@ -150,12 +150,12 @@ public class Main {
                         double[] NfusionB2 = NormalizeVector.normalize(fusionB2);
 
                         // --- Décision ---
-                        double distance2 = Comparaison.distanceEuclidienne(NfusionA2, NfusionB2);
+                        double distance2 = Comparaison.distanceKhiCarre(NfusionA2, NfusionB2);
                         double cosineSim2 = Comparaison.similitudeCosinus(NfusionA2, NfusionB2);
 
                         double score = Compatibilite.CalculCompatibilite(distance2);
 
-                        System.out.println(f.getName() + " -> Similarité Euclidienne : " + score + " | Cosinus : "
+                        System.out.println(f.getName() + " -> Similarité Texture Chi-2 : " + score + " | Cosinus : "
                                 + (cosineSim2 * 100) + "%");
 
                         if (score > meilleurScore) {
