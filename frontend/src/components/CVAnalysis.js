@@ -8,7 +8,6 @@ export default function CV() {
   const [features, setFeatures] = useState(null);
   const [loading, setLoading] = useState(false);
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
-  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
   const handleFileChange = (event) => {
     if (event.target.files && event.target.files[0]) {
@@ -77,17 +76,6 @@ export default function CV() {
 
     return (
       <div style={rectStyle} key={label}>
-        <span style={{
-          position: "absolute",
-          top: "-20px",
-          left: "0",
-          backgroundColor: color,
-          color: "white",
-          fontSize: "10px",
-          padding: "2px 5px",
-          borderRadius: "3px",
-          fontWeight: "bold"
-        }}>{label}</span>
       </div>
     );
   };
@@ -155,10 +143,6 @@ export default function CV() {
               src={URL.createObjectURL(selectedFile)}
               alt="Preview"
               className="cv-preview-img"
-              onLoad={(e) => {
-                // Force re-render once image is loaded to calc boxes
-                setContainerSize({ width: e.target.clientWidth, height: e.target.clientHeight });
-              }}
             />
             {features && (
               <>
