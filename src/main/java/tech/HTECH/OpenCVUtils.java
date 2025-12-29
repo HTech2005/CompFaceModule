@@ -1,5 +1,12 @@
+package tech.HTECH;
+
+import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
 import org.bytedeco.opencv.opencv_core.*;
-import org.bytedeco.opencv.global.opencv_imgcodecs;
+import java.util.Base64;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import javax.imageio.ImageIO;
 
 public class OpenCVUtils {
 
@@ -47,11 +54,22 @@ public class OpenCVUtils {
         if (mat == null || mat.empty())
             return "";
         try {
-            Mat buf = new Mat();
-            opencv_imgcodecs.imencode(".jpg", mat, buf);
-            byte[] bytes = new byte[(int) (buf.total() * buf.elemSize())];
-            buf.data().get(bytes);
-            return java.util.Base64.getEncoder().encodeToString(bytes);
+            int width = mat.cols();
+            int height = mat.rows();
+            BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+            byte[] buffer = new byte[3];
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    mat.ptr(y, x).get(buffer);
+                    int b = buffer[0] & 0xFF;
+                    int g = buffer[1] & 0xFF;
+                    int r = buffer[2] & 0xFF;
+                    image.setRGB(x, y, (r << 16) | (g << 8) | b);
+                }
+            }
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(image, "jpg", baos);
+            return Base64.getEncoder().encodeToString(baos.toByteArray());
         } catch (Exception e) {
             e.printStackTrace();
             return "";
