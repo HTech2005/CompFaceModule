@@ -5,8 +5,6 @@ import Header from "./components/Header";
 import Home from "./components/Home";
 import CDV from "./components/CDV";
 import CDVCompare from "./components/CDVCompare";
-import SV from "./components/SV";
-import SVAnalysis from "./components/SVAnalysis";
 import TR from "./components/TR";
 import TRRecognition from "./components/TRRecognition";
 import CV from "./components/CV";
@@ -21,8 +19,6 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/cdv" element={<CDV />} />
         <Route path="/cdv-compare" element={<CDVCompare />} />
-        <Route path="/sv" element={<SV />} />
-        <Route path="/sv-analysis" element={<SVAnalysis />} />
         <Route path="/tr" element={<TR />} />
         <Route path="/tr-recognition" element={<TRRecognition />} />
         <Route path="/cv" element={<CV />} />
