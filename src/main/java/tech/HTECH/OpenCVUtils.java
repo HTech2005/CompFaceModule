@@ -1,10 +1,5 @@
-package tech.HTECH;
-
-import ij.process.ColorProcessor;
-import ij.process.ImageProcessor;
-import org.bytedeco.opencv.opencv_core.Mat;
-import org.bytedeco.opencv.opencv_core.ByteVector;
-import org.bytedeco.opencv.global.opencv_core;
+import org.bytedeco.opencv.opencv_core.*;
+import org.bytedeco.opencv.global.opencv_imgcodecs;
 
 public class OpenCVUtils {
 
@@ -48,12 +43,14 @@ public class OpenCVUtils {
         return new ColorProcessor(width, height, pixels);
     }
 
-    public static String matToBase64(org.bytedeco.opencv.opencv_core.Mat mat) {
+    public static String matToBase64(Mat mat) {
+        if (mat == null || mat.empty())
+            return "";
         try {
-            org.bytedeco.opencv.opencv_core.ByteVector buf = new org.bytedeco.opencv.opencv_core.ByteVector();
-            org.bytedeco.opencv.global.opencv_imgcodecs.imencode(".jpg", mat, buf);
-            byte[] bytes = new byte[(int) buf.size()];
-            buf.get(bytes);
+            Mat buf = new Mat();
+            opencv_imgcodecs.imencode(".jpg", mat, buf);
+            byte[] bytes = new byte[(int) (buf.total() * buf.elemSize())];
+            buf.data().get(bytes);
             return java.util.Base64.getEncoder().encodeToString(bytes);
         } catch (Exception e) {
             e.printStackTrace();
