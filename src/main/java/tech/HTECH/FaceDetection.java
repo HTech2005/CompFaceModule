@@ -49,8 +49,8 @@ public class FaceDetection {
         // Dessiner un rectangle autour du visage le plus grand
         opencv_imgproc.rectangle(image, largestFace, new Scalar(0, 255, 0, 0), 2, 8, 0);
 
-        // Extraire le visage
-        Mat face = new Mat(image, largestFace);
+        // Extraire le visage et cloner pour persistance
+        Mat face = new Mat(image, largestFace).clone();
 
         // Sauvegarder l'image annotée (facultatif)
         // opencv_imgcodecs.imwrite("C:/Users/HP/Desktop/TNI/CompFaceModule/resultat_face_detected"+cpt+".jpg",

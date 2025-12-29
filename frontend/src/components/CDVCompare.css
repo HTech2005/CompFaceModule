@@ -189,82 +189,14 @@
 
 .score-item.global {
   grid-column: span 2;
-  background: rgba(255, 204, 0, 0.1);
-  border: 1px solid rgba(255, 204, 0, 0.2);
-  margin-top: 10px;
-}
-
-.cdv-detected-faces {
-  margin-top: 25px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.detected-title {
-  color: #00d2ff;
-  font-size: 0.9rem;
-  margin-bottom: 15px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  text-align: center;
-}
-
-.faces-row {
-  display: flex;
-  justify-content: center;
-  gap: 30px;
-}
-
-.face-item {
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 198, 255, 0.1));
+  border: 1px solid rgba(0, 255, 136, 0.2);
+  box-shadow: none;
+  padding: 15px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-}
-
-.detected-face-img {
-  width: 90px;
-  height: 90px;
-  border-radius: 12px;
-  border: 3px solid #00d2ff;
-  object-fit: cover;
-  background: #000;
-  box-shadow: 0 0 15px rgba(0, 210, 255, 0.3);
-}
-
-.face-tag {
-  font-size: 0.8rem;
-  color: #00d2ff;
-  font-weight: bold;
-}
-
-.cdv-scores {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-top: 30px;
-  width: 100%;
-}
-
-.score-item {
-  text-align: center;
-  background: rgba(255, 255, 255, 0.03);
-  padding: 20px 10px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: 0.3s;
-}
-
-.score-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-.score-item.global {
-  grid-column: span 2;
-  background: linear-gradient(135deg, rgba(255, 204, 0, 0.1), rgba(255, 153, 0, 0.1));
-  border: 1px solid rgba(255, 204, 0, 0.3);
-  box-shadow: 0 0 20px rgba(255, 204, 0, 0.05);
+  justify-content: center;
 }
 
 .score-value {
@@ -272,14 +204,15 @@
   font-size: 2.2rem;
   font-weight: 800;
   letter-spacing: -1px;
+  line-height: 1;
 }
 
 .score-label {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: #aaa;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
-  font-weight: 600;
+  letter-spacing: 2px;
+  margin-top: 5px;
 }
 
 @keyframes popIn {

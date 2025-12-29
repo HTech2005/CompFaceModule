@@ -54,22 +54,11 @@ public class OpenCVUtils {
         if (mat == null || mat.empty())
             return "";
         try {
-            int width = mat.cols();
-            int height = mat.rows();
-            BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-            byte[] buffer = new byte[3];
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    mat.ptr(y, x).get(buffer);
-                    int b = buffer[0] & 0xFF;
-                    int g = buffer[1] & 0xFF;
-                    int r = buffer[2] & 0xFF;
-                    image.setRGB(x, y, (r << 16) | (g << 8) | b);
-                }
-            }
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ImageIO.write(image, "jpg", baos);
-            return Base64.getEncoder().encodeToString(baos.toByteArray());
+            org.bytedeco.opencv.opencv_core.ByteVector buf = new org.bytedeco.opencv.opencv_core.ByteVector();
+            org.bytedeco.opencv.global.opencv_imgcodecs.imencode(".jpg", mat, buf);
+            byte[] bytes = new byte[(int) buf.size()];
+            buf.get(bytes);
+            return Base64.getEncoder().encodeToString(bytes);
         } catch (Exception e) {
             e.printStackTrace();
             return "";
