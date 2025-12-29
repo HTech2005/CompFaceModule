@@ -21,7 +21,6 @@ export default function TRRecognition() {
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
                 setIsStreaming(true);
-                setError(null);
                 // Reset state
                 setTimeLeft(10);
                 setIsScanComplete(false);
