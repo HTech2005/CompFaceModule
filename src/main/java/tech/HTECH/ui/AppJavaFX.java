@@ -24,9 +24,9 @@ public class AppJavaFX extends Application {
         primaryStage.setResizable(true);
 
         primaryStage.setMinWidth(800);
-        primaryStage.setMinHeight(600);
+        primaryStage.setMinHeight(400);
 
-        primaryStage.setScene(new Scene(root, 800, 600));
+        primaryStage.setScene(new Scene(root, 800, 400));
         primaryStage.show();
     }
 

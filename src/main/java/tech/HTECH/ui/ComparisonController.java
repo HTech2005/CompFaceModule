@@ -10,6 +10,7 @@ import org.bytedeco.opencv.opencv_core.Mat;
 import tech.HTECH.FaceDetection;
 import tech.HTECH.OpenCVUtils;
 import tech.HTECH.service.FaceService;
+import tech.HTECH.service.HistoryService;
 
 import java.io.File;
 
@@ -73,6 +74,11 @@ public class ComparisonController {
             }
 
             FaceService.ComparisonResult result = faceService.compareFaces(face1, face2);
+
+            HistoryService.getInstance().incrementCDV();
+            HistoryService.getInstance().addLog("Comparaison CDV: " + file1.getName() + " vs " + file2.getName() + " ("
+                    + (result.isMatch() ? "OK" : "ÉCHEC") + ")");
+            HistoryService.getInstance().checkAutomatedError(file1.getName(), file2.getName(), result.isMatch());
 
             // Afficher les visages détectés
             imgDetected1.setImage(OpenCVUtils.matToImage(face1));

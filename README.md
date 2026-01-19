@@ -5,17 +5,17 @@ Ce projet est une application desktop JavaFX utilisant OpenCV et des techniques 
 ## 📂 Architecture des Fichiers et Rôles
 
 ### 🖥️ Interface Utilisateur (UI)
-- **[AppJavaFX.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/ui/AppJavaFX.java)** : Point d'entrée de l'application. Configure la fenêtre principale (800x600, resizable) et charge le layout FXML de base.
-- **[MainController.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/ui/MainController.java)** : Gère la navigation latérale. Il échange dynamiquement le contenu central de la fenêtre sans recharger toute l'application.
-- **[ComparisonController.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/ui/ComparisonController.java)** (CDV) : Gère le chargement de deux images locales, lance la détection, et affiche les scores de comparaison.
-- **[RecognitionController.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/ui/RecognitionController.java)** (TR) : Gère le flux vidéo webcam. Utilise un `ScheduledExecutorService` pour capter 30 images/s et lance une analyse de reconnaissance chaque seconde.
-- **[AnalysisController.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/ui/AnalysisController.java)** (CV) : Analyse les traits biométriques (yeux, nez, bouche) et dessine des cadres de détection sur un Canvas.
+- **[AppJavaFX.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/ui/AppJavaFX.java)** : Point d'entrée de l'application. Fenêtre principale (800x400).
+- **[MainController.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/ui/MainController.java)** : Navigation latérale et gestion dynamique.
+- **[ComparisonController.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/ui/ComparisonController.java)** (CDV) : Comparaison locale et détection d'erreurs.
+- **[DashboardController.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/ui/DashboardController.java)** : Gestion BDD (Ajout, Suppr, Rename).
+- **[StatisticsController.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/ui/StatisticsController.java)** : Reporting, stats et galerie.
+- **[RecognitionController.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/ui/RecognitionController.java)** (TR) : Reconnaissance temps réel.
+- **[AnalysisController.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/ui/AnalysisController.java)** (CV) : Analyse traits biométriques.
 
 ### 🧠 Logique Métier (Service)
-- **[FaceService.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/service/FaceService.java)** : **Le cerveau du projet**. 
-    - Il indexe les visages du dossier `src/main/bdd` au démarrage.
-    - Il orchestre la comparaison : Appel au prétraitement -> Extraction -> Fusion -> Normalisation -> Score.
-    - Il utilise un cache statique pour une fluidité maximale.
+- **[FaceService.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/service/FaceService.java)** : Indexation, cache statique et extraction algorithmique.
+- **[HistoryService.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/service/HistoryService.java)** : Système de logs, stats et détection auto de FP/FN.
 
 ### 🔬 Algorithmes de Vision
 - **[FaceDetection.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/FaceDetection.java)** : Utilise Haar Cascades pour trouver les visages. Applique un recadrage intelligent de 15% pour se concentrer sur les traits internes.

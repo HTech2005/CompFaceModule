@@ -17,14 +17,15 @@ public class Decision {
         double scoreCos = cosineSim * 100.0;
 
         // 3. Score Géométrique (Euclidien)
-        double scoreEucl = Math.max(0.0, (1.0 - distEucl) * 100.0);
+        // La distance euclidienne max sur histogrammes normalisés est sqrt(2) ~ 1.414
+        double scoreEucl = Math.max(0.0, (1.0 - (distEucl / 1.414)) * 100.0);
 
         // Score Global Fusionné
         // Texture (60%) + Cosinus (20%) + Euclidien (20%)
         double globalScore = (scoreChi2 * 0.6) + (scoreCos * 0.2) + (scoreEucl * 0.2);
 
-        // Seuil plus strict (75%) car la granularité 8x8 est plus précise
-        double seuilGlobal = 75.0;
+        // Seuil de 70% comme demandé
+        double seuilGlobal = 70.0;
 
         return globalScore >= seuilGlobal;
     }

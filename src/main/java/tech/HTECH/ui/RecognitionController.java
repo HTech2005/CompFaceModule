@@ -16,7 +16,9 @@ import org.bytedeco.opencv.opencv_core.Mat;
 import tech.HTECH.FaceDetection;
 import tech.HTECH.OpenCVUtils;
 import tech.HTECH.service.FaceService;
+import tech.HTECH.service.HistoryService;
 
+import java.io.File;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -24,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 public class RecognitionController {
 
     @FXML
-    private ImageView videoFeed;
+    private ImageView videoFeed, imgResult;
     @FXML
     private VBox overlay, resultCard;
     @FXML
@@ -106,25 +108,49 @@ public class RecognitionController {
     }
 
     private void processRecognition(Mat mat) {
-        // Définir la zone du cadre de guidage (calculé par rapport à la taille de
-        // l'image)
-        // L'ImageView fait 480x360. Le guide fait 200x240 au centre.
-        int guideWidth = 200;
-        int guideHeight = 240;
-        int x = (mat.cols() - guideWidth) / 2;
-        int y = (mat.rows() - guideHeight) / 2;
+        int matW = mat.cols();
+        int matH = mat.rows();
+
+        // Calculer la zone de crop proportionnelle au cadre UI (200x240 sur 480x360)
+        // On prend un peu plus large (marge de 20%) pour être plus souple
+        double ratioW = 200.0 / 480.0 * 1.2;
+        double ratioH = 240.0 / 360.0 * 1.2;
+
+        int cropW = (int) (matW * ratioW);
+        int cropH = (int) (matH * ratioH);
+        int x = (matW - cropW) / 2;
+        int y = (matH - cropH) / 2;
 
         try {
-            // Créer une sous-matrice correspondant au cadre de guidage
-            org.bytedeco.opencv.opencv_core.Rect guideRect = new org.bytedeco.opencv.opencv_core.Rect(x, y, guideWidth,
-                    guideHeight);
+            // S'assurer que les coordonnées sont valides
+            x = Math.max(0, x);
+            y = Math.max(0, y);
+            cropW = Math.min(matW - x, cropW);
+            cropH = Math.min(matH - y, cropH);
+
+            org.bytedeco.opencv.opencv_core.Rect guideRect = new org.bytedeco.opencv.opencv_core.Rect(x, y, cropW,
+                    cropH);
             Mat croppedMat = new Mat(mat, guideRect);
 
-            // Détecter dans cette zone réduite (plus rapide et précis)
             Mat face = FaceDetection.detectFaceMat(croppedMat);
             if (face != null) {
+                Platform.runLater(() -> faceGuide.setStyle(
+                        "-fx-border-color: #00ff88; -fx-border-width: 4; -fx-border-style: solid; -fx-border-radius: 15;"));
                 FaceService.RecognitionResult result = faceService.recognizeFace(face);
+                if (result.isFound()) {
+                    HistoryService.getInstance().addLog("Reconnaissance TR: " + result.getBestMatch() + " ("
+                            + String.format("%.1f", result.getScoreGlobal()) + "%)");
+                }
                 Platform.runLater(() -> updateUI(result));
+            } else {
+                // Notifier que rien n'est détecté
+                Platform.runLater(() -> {
+                    faceGuide.setStyle(
+                            "-fx-border-color: #ffffff; -fx-border-width: 2; -fx-border-style: dashed; -fx-border-radius: 15; -fx-opacity: 0.5;");
+                    lblStatus.setText("VISAGE NON DÉTECTÉ");
+                    lblStatus.setStyle("-fx-text-fill: #aaaaaa;");
+                    lblMatchIcon.setText("🔍");
+                });
             }
         } catch (Exception e) {
             System.err.println("Erreur de cropping: " + e.getMessage());
@@ -132,24 +158,36 @@ public class RecognitionController {
     }
 
     private void updateUI(FaceService.RecognitionResult result) {
-        if (result == null || !result.isFound()) {
+        if (result == null) {
             lblMatchIcon.setText("🚫");
             lblName.setText("Inconnu");
+            imgResult.setImage(null);
             progressGlobal.setProgress(0);
             lblScore.setText("Score: 0%");
-            lblStatus.setText("NON RECONNU");
+            lblStatus.setText("AUCUN VISAGE");
             lblStatus.setStyle("-fx-text-fill: #ff4e4e;");
         } else {
+            // On affiche toujours le meilleur candidat trouvé
             lblMatchIcon.setText("👤");
             lblName.setText(result.getBestMatch());
+
+            // Charger la photo de l'individu
+            if (result.getBestMatchFile() != null) {
+                File imgFile = new File("src/main/bdd", result.getBestMatchFile());
+                if (imgFile.exists()) {
+                    imgResult.setImage(new javafx.scene.image.Image(imgFile.toURI().toString()));
+                }
+            }
+
             progressGlobal.setProgress(result.getScoreGlobal() / 100.0);
-            lblScore.setText(String.format("Score: %.1f%%", result.getScoreGlobal()));
-            if (result.isMatch()) {
+            lblScore.setText(String.format("Ressemblance: %.1f%%", result.getScoreGlobal()));
+
+            if (result.isFound()) {
                 lblStatus.setText("✅ ACCÈS AUTORISÉ");
                 lblStatus.setStyle("-fx-text-fill: #00ff88;");
             } else {
-                lblStatus.setText("⛔ ACCÈS REFUSÉ");
-                lblStatus.setStyle("-fx-text-fill: #ff4e4e;");
+                lblStatus.setText("⛔ COMPATIBILITÉ INSUFFISANTE");
+                lblStatus.setStyle("-fx-text-fill: #ff9900;"); // Orange pour dire "presque"
             }
         }
         resultCard.setVisible(true);

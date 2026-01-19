@@ -13,7 +13,7 @@ public class MainController {
     @FXML
     private StackPane contentArea;
     @FXML
-    private Button btnHome, btnCDV, btnTR, btnCV, btnDashboard;
+    private Button btnHome, btnCDV, btnTR, btnCV, btnDashboard, btnStats;
 
     @FXML
     public void initialize() {
@@ -50,6 +50,12 @@ public class MainController {
         setActiveButton(btnDashboard);
     }
 
+    @FXML
+    private void showStats() {
+        loadView("/fxml/statistics.fxml");
+        setActiveButton(btnStats);
+    }
+
     private void loadView(String fxmlPath) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
@@ -66,6 +72,7 @@ public class MainController {
         btnTR.setStyle("-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;");
         btnCV.setStyle("-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;");
         btnDashboard.setStyle("-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;");
+        btnStats.setStyle("-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;");
 
         activeBtn.setStyle(
                 "-fx-background-color: #3b3b3b; -fx-text-fill: white; -fx-alignment: CENTER_LEFT; -fx-font-weight: bold;");

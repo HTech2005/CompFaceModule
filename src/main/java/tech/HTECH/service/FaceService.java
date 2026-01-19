@@ -23,35 +23,47 @@ public class FaceService {
     private synchronized void loadDatabase() {
         if (isLoaded)
             return;
+        reloadDatabase();
+        isLoaded = true;
+    }
 
+    public synchronized void reloadDatabase() {
         System.out.println("Indexation de la base de données (src/main/bdd)...");
+        databaseFeatures.clear();
         File bddDir = new File("src/main/bdd");
         if (bddDir.exists() && bddDir.isDirectory()) {
             File[] files = bddDir.listFiles((dir, name) -> name.toLowerCase().matches(".*\\.(jpg|jpeg|png)$"));
             if (files != null) {
                 for (File f : files) {
-                    try {
-                        Mat face = FaceDetection.detectFace(f.getAbsolutePath());
-                        if (face != null) {
-                            ImageProcessor ip = Pretraitement.pt(OpenCVUtils.matToImageProcessor(face));
-                            // Utilisation de 8x8 pour la précision
-                            double[] h = Histogram.histoGrid(ip, 8, 8);
-                            double[] lbp = LBP.histogramLBPGrid(LBP.LBP2D(ip), 8, 8);
-                            double[] fusion = Fusion.fus(h, lbp);
-                            double[] normalized = NormalizeVector.normalize(fusion);
-                            databaseFeatures.put(f.getName(), normalized);
-                            System.out.println("OK: " + f.getName());
-                        } else {
-                            System.err.println("Visage non détecté dans: " + f.getName());
-                        }
-                    } catch (Exception ex) {
-                        System.err.println("Erreur indexation " + f.getName() + ": " + ex.getMessage());
-                    }
+                    indexFile(f);
                 }
             }
         }
-        isLoaded = true;
         System.out.println("Indexation terminée. " + databaseFeatures.size() + " visages chargés.");
+    }
+
+    public void indexFile(File f) {
+        try {
+            Mat face = FaceDetection.detectFace(f.getAbsolutePath());
+            if (face != null) {
+                ImageProcessor ip = Pretraitement.pt(OpenCVUtils.matToImageProcessor(face));
+                double[] h = Histogram.histoGrid(ip, 8, 8);
+                double[] lbp = LBP.histogramLBPGrid(LBP.LBP2D(ip), 8, 8);
+                double[] fusion = Fusion.fus(h, lbp);
+                double[] normalized = NormalizeVector.normalize(fusion);
+                databaseFeatures.put(f.getName(), normalized);
+                System.out.println("Indexé: " + f.getName());
+            } else {
+                System.err.println("Visage non détecté dans: " + f.getName());
+            }
+        } catch (Exception ex) {
+            System.err.println("Erreur indexation " + f.getName() + ": " + ex.getMessage());
+        }
+    }
+
+    public void removeFile(String fileName) {
+        databaseFeatures.remove(fileName);
+        System.out.println("Supprimé du cache: " + fileName);
     }
 
     public ComparisonResult compareFaces(Mat face1, Mat face2) {
@@ -71,7 +83,7 @@ public class FaceService {
         double distEucl = Comparaison.distanceEuclidienne(N1, N2);
 
         double scoreTexture = Compatibilite.CalculCompatibilite(distChi2);
-        double scoreEucl = Math.max(0.0, (1.0 - distEucl) * 100.0);
+        double scoreEucl = Math.max(0.0, (1.0 - (distEucl / 1.414)) * 100.0);
 
         // Poids équilibrés pour 8x8
         double globalScore = (scoreTexture * 0.6) + (cos * 100.0 * 0.2) + (scoreEucl * 0.2);
@@ -98,7 +110,7 @@ public class FaceService {
 
         String bestMatchFile = null;
         double bestScore = 0.0;
-        double threshold = 75.0; // Seuil strict 75%
+        double threshold = 70.0; // Seuil de 70% comme demandé
 
         for (Map.Entry<String, double[]> entry : databaseFeatures.entrySet()) {
             double distChi2 = Comparaison.distanceKhiCarre(features, entry.getValue());
@@ -106,7 +118,7 @@ public class FaceService {
             double distEucl = Comparaison.distanceEuclidienne(features, entry.getValue());
 
             double score = (Compatibilite.CalculCompatibilite(distChi2) * 0.6) + (cosSim * 20.0)
-                    + ((1.0 - distEucl) * 20.0);
+                    + (Math.max(0.0, (1.0 - (distEucl / 1.414)) * 100.0) * 0.2);
 
             if (score > bestScore) {
                 bestScore = score;
@@ -114,11 +126,17 @@ public class FaceService {
             }
         }
 
+        System.out.println(
+                "DEBUG TR: Meilleur score trouvé = " + String.format("%.2f%%", bestScore) + " pour " + bestMatchFile);
+
         RecognitionResult result = new RecognitionResult();
         result.setFound(bestMatchFile != null && bestScore >= threshold);
-        if (result.isFound()) {
+
+        if (bestMatchFile != null) {
             result.setBestMatch(bestMatchFile.replaceFirst("[.][^.]+$", ""));
+            result.setBestMatchFile(bestMatchFile);
             result.setScore(bestScore);
+            result.setScoreGlobal(bestScore);
 
             double[] bestFeatures = databaseFeatures.get(bestMatchFile);
             double bc2 = Comparaison.distanceKhiCarre(features, bestFeatures);
@@ -126,11 +144,11 @@ public class FaceService {
             double beu = Comparaison.distanceEuclidienne(features, bestFeatures);
 
             result.setScoreChi2(Compatibilite.CalculCompatibilite(bc2));
-            result.setScoreEuclidien(Math.max(0.0, (1.0 - beu) * 100.0));
+            result.setScoreEuclidien(Math.max(0.0, (1.0 - (beu / 1.414)) * 100.0));
             result.setScoreCosinus(bcs * 100.0);
-            result.setScoreGlobal(bestScore);
             result.setMatch(Decision.dec(bc2, bcs, beu));
         }
+
         return result;
     }
 
@@ -185,6 +203,7 @@ public class FaceService {
     public static class RecognitionResult {
         private boolean found;
         private String bestMatch;
+        private String bestMatchFile;
         private double score;
         private double scoreChi2;
         private double scoreEuclidien;
@@ -206,6 +225,14 @@ public class FaceService {
 
         public void setBestMatch(String bestMatch) {
             this.bestMatch = bestMatch;
+        }
+
+        public String getBestMatchFile() {
+            return bestMatchFile;
+        }
+
+        public void setBestMatchFile(String bestMatchFile) {
+            this.bestMatchFile = bestMatchFile;
         }
 
         public double getScore() {

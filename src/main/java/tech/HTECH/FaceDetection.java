@@ -49,10 +49,9 @@ public class FaceDetection {
             gray = claheApplied;
             // --- FIN MODIFICATION CLAHE ---
 
-            // Détecter les visages (ajustement à 4 : équilibre entre sensibilité et
-            // précision)
+            // Détecter les visages (50x50 suffit pour le temps réel)
             RectVector faces = new RectVector();
-            classifier.detectMultiScale(gray, faces, 1.1, 4, 0, new Size(100, 100), new Size(0, 0));
+            classifier.detectMultiScale(gray, faces, 1.1, 4, 0, new Size(50, 50), new Size(0, 0));
 
             if (faces.size() == 0)
                 return null;

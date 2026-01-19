@@ -84,8 +84,10 @@ public class RealtimeComparator {
                 // Dessin du viseur (Coins seulement pour style "tech")
                 int c = boxSize / 5;
                 int th = 3; // épaisseur
-                opencv_imgproc.line(frame, new Point(x, y), new Point(x + c, y), guideColor, th, opencv_imgproc.LINE_AA, 0);
-                opencv_imgproc.line(frame, new Point(x, y), new Point(x, y + c), guideColor, th, opencv_imgproc.LINE_AA, 0);
+                opencv_imgproc.line(frame, new Point(x, y), new Point(x + c, y), guideColor, th, opencv_imgproc.LINE_AA,
+                        0);
+                opencv_imgproc.line(frame, new Point(x, y), new Point(x, y + c), guideColor, th, opencv_imgproc.LINE_AA,
+                        0);
 
                 opencv_imgproc.line(frame, new Point(x + boxSize, y), new Point(x + boxSize - c, y), guideColor, th,
                         opencv_imgproc.LINE_AA, 0);
@@ -107,7 +109,8 @@ public class RealtimeComparator {
 
                 // Centrer le texte du temps en haut
                 int[] baseline = new int[1];
-                Size textSize = opencv_imgproc.getTextSize(timeText, opencv_imgproc.FONT_HERSHEY_SIMPLEX, 1.0, 2, baseline);
+                Size textSize = opencv_imgproc.getTextSize(timeText, opencv_imgproc.FONT_HERSHEY_SIMPLEX, 1.0, 2,
+                        baseline);
                 Point textOrg = new Point((width - textSize.width()) / 2, 50);
 
                 opencv_imgproc.putText(frame, timeText, textOrg, opencv_imgproc.FONT_HERSHEY_SIMPLEX, 1.0,
@@ -147,7 +150,8 @@ public class RealtimeComparator {
 
                             double scoreTexture = Compatibilite.CalculCompatibilite(distChi2);
                             double scoreCosinus = cosSim * 100.0;
-                            double scoreGlobal = ((1.0 - (distChi2 / 2.0)) * 50.0 + (cosSim * 30.0) + (1.0 - distEucl) * 20.0);
+                            double scoreGlobal = ((1.0 - (distChi2 / 2.0)) * 50.0 + (cosSim * 30.0)
+                                    + Math.max(0.0, (1.0 - (distEucl / 1.414)) * 20.0));
 
                             // Stockage
                             scoresEuclidien.add(scoreGlobal); // On stocke le score fusionné pour le résultat final
@@ -156,11 +160,14 @@ public class RealtimeComparator {
 
                             // Affichage Temps Réel
                             boolean isMatch = Decision.dec(distChi2, cosSim, distEucl);
-                            Scalar resultColor = isMatch ? new Scalar(0, 255, 0, 0) : new Scalar(0, 0, 255, 0); // Vert ou Rouge
+                            Scalar resultColor = isMatch ? new Scalar(0, 255, 0, 0) : new Scalar(0, 0, 255, 0); // Vert
+                                                                                                                // ou
+                                                                                                                // Rouge
 
                             // Cadre autour du visage détecté
                             opencv_imgproc.rectangle(frame, new Point(r.x(), r.y()),
-                                    new Point(r.x() + r.width(), r.y() + r.height()), resultColor, 2, opencv_imgproc.LINE_AA,
+                                    new Point(r.x() + r.width(), r.y() + r.height()), resultColor, 2,
+                                    opencv_imgproc.LINE_AA,
                                     0);
 
                             // Infos
@@ -169,11 +176,13 @@ public class RealtimeComparator {
                             String info3 = String.format("Global: %.1f%%", scoreGlobal);
 
                             opencv_imgproc.putText(frame, info1, new Point(r.x(), r.y() - 45),
-                                    opencv_imgproc.FONT_HERSHEY_PLAIN, 1.2, resultColor, 2, opencv_imgproc.LINE_AA, false);
+                                    opencv_imgproc.FONT_HERSHEY_PLAIN, 1.2, resultColor, 2, opencv_imgproc.LINE_AA,
+                                    false);
                             opencv_imgproc.putText(frame, info2, new Point(r.x(), r.y() - 25),
                                     opencv_imgproc.FONT_HERSHEY_PLAIN,
                                     1.2, resultColor, 2, opencv_imgproc.LINE_AA, false);
-                            opencv_imgproc.putText(frame, info3, new Point(r.x(), r.y() - 5), opencv_imgproc.FONT_HERSHEY_PLAIN,
+                            opencv_imgproc.putText(frame, info3, new Point(r.x(), r.y() - 5),
+                                    opencv_imgproc.FONT_HERSHEY_PLAIN,
                                     1.2, resultColor, 2, opencv_imgproc.LINE_AA, false);
                         } finally {
                             faceROI.release();
@@ -185,7 +194,8 @@ public class RealtimeComparator {
                     String msg = "PLACEZ VOTRE VISAGE AU CENTRE";
                     Size s = opencv_imgproc.getTextSize(msg, opencv_imgproc.FONT_HERSHEY_SIMPLEX, 0.8, 2, baseline);
                     opencv_imgproc.putText(frame, msg, new Point((width - s.width()) / 2, height - 50),
-                            opencv_imgproc.FONT_HERSHEY_SIMPLEX, 0.8, new Scalar(0, 255, 255, 0), 2, opencv_imgproc.LINE_AA,
+                            opencv_imgproc.FONT_HERSHEY_SIMPLEX, 0.8, new Scalar(0, 255, 255, 0), 2,
+                            opencv_imgproc.LINE_AA,
                             false);
                 }
 

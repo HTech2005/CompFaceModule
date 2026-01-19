@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns:fx="http://javafx.com/fxml" fx:controller="tech.HTECH.ui.StatisticsController" spacing="20" style="-fx-background-color: #121212;">
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <Label text="Statistiques &amp; Historique des Tests" style="-fx-text-fill: white; -fx-font-size: 24; -fx-font-weight: bold;"/>
+
+    <HBox spacing="20">
+        <!-- Panel Statistiques -->
+        <VBox spacing="15" prefWidth="300" style="-fx-background-color: #1a1a1a; -fx-padding: 20; -fx-background-radius: 10; -fx-border-color: #333333;">
+            <Label text="Résumé des Tests" style="-fx-text-fill: #00ff88; -fx-font-size: 18; -fx-font-weight: bold;"/>
+            <Separator style="-fx-background-color: #404040;"/>
+            
+            <VBox spacing="5">
+                <Label text="Total CDV effectués:" style="-fx-text-fill: #aaaaaa;"/>
+                <Label fx:id="lblTotalCDV" text="0" style="-fx-text-fill: white; -fx-font-size: 20; -fx-font-weight: bold;"/>
+            </VBox>
+            
+            <VBox spacing="5">
+                <Label text="Faux Positifs (FP):" style="-fx-text-fill: #aaaaaa;"/>
+                <Label fx:id="lblFP" text="0" style="-fx-text-fill: #ff4e4e; -fx-font-size: 20; -fx-font-weight: bold;"/>
+            </VBox>
+            
+            <VBox spacing="5">
+                <Label text="Faux Négatifs (FN):" style="-fx-text-fill: #aaaaaa;"/>
+                <Label fx:id="lblFN" text="0" style="-fx-text-fill: #ff9900; -fx-font-size: 20; -fx-font-weight: bold;"/>
+            </VBox>
+            
+            <Button text="Réinitialiser les Stats" onAction="#handleReset" maxWidth="Infinity" style="-fx-background-color: #444444; -fx-text-fill: white;"/>
+        </VBox>
+
+        <!-- Panel Gestion des Similitudes -->
+        <VBox spacing="15" HBox.hgrow="ALWAYS" style="-fx-background-color: #1a1a1a; -fx-padding: 20; -fx-background-radius: 10; -fx-border-color: #333333;">
+            <Label text="Signaler une erreur de test" style="-fx-text-fill: white; -fx-font-size: 18;"/>
+            <HBox spacing="10">
+                <Button text="+ Faux Positif" onAction="#handleAddFP" style="-fx-background-color: #ff4e4e; -fx-text-fill: white;"/>
+                <Button text="+ Faux Négatif" onAction="#handleAddFN" style="-fx-background-color: #ff9900; -fx-text-fill: white;"/>
+            </HBox>
+            
+            <Separator style="-fx-background-color: #404040;"/>
+
+            <Label text="Photos qui se ressemblent (Groupes d'Aliasing)" style="-fx-text-fill: white; -fx-font-size: 16;"/>
+            <VBox spacing="10">
+                <TextField fx:id="txtImgNames" promptText="Noms des photos séparés par des virgules (ex: 1.jpg, 2.jpg, 3.jpg)" style="-fx-background-color: #262626; -fx-text-fill: white;"/>
+                <Button text="Créer un groupe de similitude" onAction="#handleCreateGroup" maxWidth="Infinity" style="-fx-background-color: #007bff; -fx-text-fill: white;"/>
+                
+                <Label text="Groupes enregistrés (Défilement horizontal pour voir les photos)" style="-fx-text-fill: #555555; -fx-font-size: 11;"/>
+                <ListView fx:id="listGroups" prefHeight="250" style="-fx-background-color: #000000; -fx-control-inner-background: #000000;"/>
+            </VBox>
+            
+            <Separator style="-fx-background-color: #404040;"/>
+            
+            <Label text="Historique des Actions" style="-fx-text-fill: #aaaaaa;"/>
+            <ListView fx:id="listHistory" VBox.vgrow="ALWAYS" style="-fx-background-color: #000000; -fx-control-inner-background: #000000; -fx-text-fill: #cccccc;"/>
+        </VBox>
+    </HBox>
+</VBox>
