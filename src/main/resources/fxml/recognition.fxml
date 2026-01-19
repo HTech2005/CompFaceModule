@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.image.ImageView?>
+
+<HBox xmlns:fx="http://javafx.com/fxml" fx:controller="tech.HTECH.ui.RecognitionController" spacing="20" style="-fx-background-color: #121212;">
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <VBox spacing="15" HBox.hgrow="ALWAYS">
+        <Label text="Identification Temps Réel (TR)" style="-fx-text-fill: white; -fx-font-size: 24; -fx-font-weight: bold;"/>
+        
+        <StackPane style="-fx-background-color: #000000; -fx-background-radius: 10; -fx-border-color: #333333; -fx-border-radius: 10;">
+            <ImageView fx:id="videoFeed" fitWidth="480" fitHeight="360" preserveRatio="true"/>
+            
+            <!-- Cadre de positionnement -->
+            <Pane fx:id="faceGuide" maxWidth="200" maxHeight="240" mouseTransparent="true" 
+                  style="-fx-border-color: #00ff88; -fx-border-width: 2; -fx-border-style: dashed; -fx-border-radius: 15;"/>
+
+            <VBox fx:id="overlay" alignment="CENTER" visible="false" mouseTransparent="true">
+                <Label fx:id="lblScanning" text="ANALYSE EN COURS..." style="-fx-text-fill: #00ff88; -fx-font-weight: bold; -fx-font-size: 18;"/>
+                <Label fx:id="lblTimer" text="10s" style="-fx-text-fill: white; -fx-font-size: 32;"/>
+            </VBox>
+        </StackPane>
+
+        <HBox spacing="10">
+            <Button fx:id="btnStart" text="Démarrer Scan" onAction="#startCamera" style="-fx-background-color: #007bff; -fx-text-fill: white; -fx-pref-width: 150;"/>
+            <Button fx:id="btnStop" text="Arrêter" onAction="#stopCamera" disable="true" style="-fx-background-color: #ff4e4e; -fx-text-fill: white; -fx-pref-width: 150;"/>
+        </HBox>
+    </VBox>
+
+    <VBox spacing="20" prefWidth="300" style="-fx-background-color: #1a1a1a; -fx-padding: 20; -fx-background-radius: 10;">
+        <Label text="Résultat" style="-fx-text-fill: white; -fx-font-size: 20; -fx-font-weight: bold;"/>
+        
+        <VBox fx:id="resultCard" visible="false" spacing="10" alignment="CENTER" style="-fx-background-color: #262626; -fx-padding: 15; -fx-background-radius: 8; -fx-border-color: #404040;">
+            <Label fx:id="lblMatchIcon" text="👤" style="-fx-font-size: 40;"/>
+            <Label fx:id="lblName" text="Inconnu" style="-fx-text-fill: white; -fx-font-size: 18; -fx-font-weight: bold;"/>
+            <ProgressBar fx:id="progressGlobal" prefWidth="250" progress="0.0" style="-fx-accent: #ffcc00;"/>
+            <Label fx:id="lblScore" text="Score: 0%" style="-fx-text-fill: #aaaaaa;"/>
+            <Label fx:id="lblStatus" text="ACCÈS REFUSÉ" style="-fx-text-fill: #ff4e4e; -fx-font-weight: bold;"/>
+        </VBox>
+
+        <Label fx:id="lblWaiting" text="En attente de démarrage..." style="-fx-text-fill: #555555;" wrapText="true"/>
+    </VBox>
+</HBox>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.text.Text?>
+
+<VBox xmlns:fx="http://javafx.com/fxml" alignment="CENTER" spacing="20" style="-fx-background-color: #121212;">
+    <padding>
+        <Insets top="40" right="40" bottom="40" left="40"/>
+    </padding>
+    <Label text="Bienvenue sur Face Module" style="-fx-text-fill: white; -fx-font-size: 32; -fx-font-weight: bold;"/>
+    <Label text="Analyse biométrique et reconnaissance faciale haute performance." style="-fx-text-fill: #aaaaaa; -fx-font-size: 16;"/>
+    
+    <HBox spacing="20" alignment="CENTER">
+        <VBox spacing="10" alignment="CENTER" style="-fx-background-color: #262626; -fx-padding: 20; -fx-background-radius: 10; -fx-pref-width: 250;">
+            <Label text="CDV" style="-fx-text-fill: #007bff; -fx-font-size: 24; -fx-font-weight: bold;"/>
+            <Label text="Comparer deux visages" style="-fx-text-fill: white;"/>
+        </VBox>
+        <VBox spacing="10" alignment="CENTER" style="-fx-background-color: #262626; -fx-padding: 20; -fx-background-radius: 10; -fx-pref-width: 250;">
+            <Label text="TR" style="-fx-text-fill: #00ff88; -fx-font-size: 24; -fx-font-weight: bold;"/>
+            <Label text="Temps Réel" style="-fx-text-fill: white;"/>
+        </VBox>
+        <VBox spacing="10" alignment="CENTER" style="-fx-background-color: #262626; -fx-padding: 20; -fx-background-radius: 10; -fx-pref-width: 250;">
+            <Label text="CV" style="-fx-text-fill: #ffcc00; -fx-font-size: 24; -fx-font-weight: bold;"/>
+            <Label text="Analyse Faciale" style="-fx-text-fill: white;"/>
+        </VBox>
+    </HBox>
+</VBox>

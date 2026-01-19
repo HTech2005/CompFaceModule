@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.canvas.Canvas?>
+
+<HBox xmlns:fx="http://javafx.com/fxml" fx:controller="tech.HTECH.ui.AnalysisController" spacing="20" style="-fx-background-color: #121212;">
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <VBox spacing="20" prefWidth="400">
+        <Label text="Analyse Faciale (CV)" style="-fx-text-fill: white; -fx-font-size: 24; -fx-font-weight: bold;"/>
+        <Label text="Importez une image pour extraire les mesures biométriques clés." style="-fx-text-fill: #aaaaaa;"/>
+
+        <VBox spacing="10" alignment="CENTER" style="-fx-background-color: #262626; -fx-padding: 30; -fx-background-radius: 10; -fx-border-color: #404040; -fx-border-style: dashed;">
+            <Label text="📂" style="-fx-font-size: 40;"/>
+            <Label fx:id="lblFileName" text="Cliquez pour charger une image" style="-fx-text-fill: #aaaaaa;"/>
+            <Button text="Choisir Fichier" onAction="#handleUpload" style="-fx-background-color: #007bff; -fx-text-fill: white;"/>
+        </VBox>
+
+        <Button text="LANCER L'ANALYSE" onAction="#handleAnalyze" fx:id="btnAnalyze" disable="true" maxWidth="Infinity" style="-fx-background-color: #00ff88; -fx-text-fill: #121212; -fx-font-weight: bold;"/>
+
+        <GridPane fx:id="resultsGrid" hgap="10" vgap="10" visible="false">
+            <VBox style="-fx-background-color: #1a1a1a; -fx-padding: 10; -fx-background-radius: 5;" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                <Label fx:id="lblResDim" text="--" style="-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;"/>
+                <Label text="Dimensions (px)" style="-fx-text-fill: #555555; -fx-font-size: 11;"/>
+            </VBox>
+            <VBox style="-fx-background-color: #1a1a1a; -fx-padding: 10; -fx-background-radius: 5;" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                <Label fx:id="lblResEye" text="--" style="-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;"/>
+                <Label text="Dist. Yeux" style="-fx-text-fill: #555555; -fx-font-size: 11;"/>
+            </VBox>
+            <VBox style="-fx-background-color: #1a1a1a; -fx-padding: 10; -fx-background-radius: 5;" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                <Label fx:id="lblResNose" text="--" style="-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;"/>
+                <Label text="Largeur Nez" style="-fx-text-fill: #555555; -fx-font-size: 11;"/>
+            </VBox>
+            <VBox style="-fx-background-color: #1a1a1a; -fx-padding: 10; -fx-background-radius: 5;" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                <Label fx:id="lblResMouth" text="--" style="-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;"/>
+                <Label text="Largeur Bouche" style="-fx-text-fill: #555555; -fx-font-size: 11;"/>
+            </VBox>
+        </GridPane>
+    </VBox>
+
+    <StackPane fx:id="imageStack" HBox.hgrow="ALWAYS" style="-fx-background-color: #000000; -fx-background-radius: 10;">
+        <ImageView fx:id="imgPreview" fitWidth="450" fitHeight="450" preserveRatio="true"/>
+        <Canvas fx:id="overlayCanvas" mouseTransparent="true" width="450" height="450"/>
+    </StackPane>
+</HBox>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.text.Text?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="tech.HTECH.ui.MainController" style="-fx-background-color: #1a1a1a;">
+    <left>
+        <VBox spacing="10" style="-fx-background-color: #262626; -fx-pref-width: 200;">
+            <padding>
+                <Insets top="20" right="10" bottom="20" left="10"/>
+            </padding>
+            <Label text="FACE MODULE" style="-fx-text-fill: white; -fx-font-size: 18; -fx-font-weight: bold;"/>
+            <Separator style="-fx-background-color: #404040;"/>
+            <Button text="Accueil" fx:id="btnHome" onAction="#showHome" maxWidth="Infinity" style="-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;"/>
+            <Button text="Comparer (CDV)" fx:id="btnCDV" onAction="#showCDV" maxWidth="Infinity" style="-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;"/>
+            <Button text="Temps Réel (TR)" fx:id="btnTR" onAction="#showTR" maxWidth="Infinity" style="-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;"/>
+            <Button text="Analyse (CV)" fx:id="btnCV" onAction="#showCV" maxWidth="Infinity" style="-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;"/>
+            <Button text="Dashboard" fx:id="btnDashboard" onAction="#showDashboard" maxWidth="Infinity" style="-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;"/>
+        </VBox>
+    </left>
+    <center>
+        <ScrollPane fitToWidth="true" fitToHeight="true" style="-fx-background-color: transparent; -fx-background: #121212; -fx-border-color: transparent;">
+            <StackPane fx:id="contentArea" style="-fx-background-color: #121212;">
+                <!-- Content will be loaded here -->
+            </StackPane>
+        </ScrollPane>
+    </center>
+</BorderPane>

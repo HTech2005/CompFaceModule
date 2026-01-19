@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns:fx="http://javafx.com/fxml" fx:controller="tech.HTECH.ui.DashboardController" spacing="20" style="-fx-background-color: #121212;">
+    <padding>
+        <Insets top="30" right="30" bottom="30" left="30"/>
+    </padding>
+
+    <Label text="Tableau de Bord" style="-fx-text-fill: white; -fx-font-size: 24; -fx-font-weight: bold;"/>
+
+    <FlowPane hgap="20" vgap="20">
+        <VBox spacing="10" alignment="CENTER" style="-fx-background-color: #262626; -fx-padding: 20; -fx-background-radius: 10; -fx-pref-width: 200;">
+            <Label text="Visages Enregistrés" style="-fx-text-fill: #aaaaaa;"/>
+            <Label fx:id="lblCountEnregistre" text="0" style="-fx-text-fill: white; -fx-font-size: 32; -fx-font-weight: bold;"/>
+            <Button text="Gérer" style="-fx-background-color: #3b3b3b; -fx-text-fill: white;"/>
+        </VBox>
+
+        <VBox spacing="10" alignment="CENTER" style="-fx-background-color: #262626; -fx-padding: 20; -fx-background-radius: 10; -fx-pref-width: 200;">
+            <Label text="Dernières Actions" style="-fx-text-fill: #aaaaaa;"/>
+            <Label text="Aucune" style="-fx-text-fill: #555555; -fx-font-size: 14;"/>
+            <Button text="Historique" style="-fx-background-color: #3b3b3b; -fx-text-fill: white;"/>
+        </VBox>
+    </FlowPane>
+
+    <VBox spacing="10" VBox.vgrow="ALWAYS">
+        <Label text="Base de données (src/main/bdd)" style="-fx-text-fill: white; -fx-font-size: 18;"/>
+        <ListView fx:id="listBDD" style="-fx-background-color: #1a1a1a; -fx-control-inner-background: #1a1a1a; -fx-text-fill: white;"/>
+    </VBox>
+</VBox>

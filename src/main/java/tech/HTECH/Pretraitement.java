@@ -1,35 +1,63 @@
 package tech.HTECH;
 
-import ij.process.ImageProcessor;
 import ij.process.ByteProcessor;
+import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
+import org.bytedeco.opencv.global.opencv_core;
+import org.bytedeco.opencv.global.opencv_imgproc;
+import org.bytedeco.opencv.opencv_core.Mat;
+import org.bytedeco.opencv.opencv_core.Size;
+import tech.HTECH.OpenCVUtils;
 
 public class Pretraitement {
     public static ImageProcessor pt(ImageProcessor ip) {
-        // Convertir en ByteProcessor (niveaux de gris)
+        // 1. Convertir en niveaux de gris et redimensionner
         ip = ip.convertToByte(true);
-
-        // Redimensionner à 128x128
         ip = ip.resize(128, 128);
 
-        // Égalisation d'histogramme
-        ip = ip.duplicate();
-
-        ip.resetMinAndMax(); // met à jour les valeurs min et max
-
-        ip = ip.convertToByte(true); // convertit encore pour être sûr
-
-        ip = ip.duplicate(); // copie finale
-        // ImageJ 1.54e n'a pas de equalizeHistogram() directement
-        // Pour égaliser, on utilise le plugin d'ImageJ :
-        // ip.equalize() peut être utilisé si tu importes
-        // ij.plugin.filter.ContrastEnhancer
+        // 2. Appliquer CLAHE via OpenCV pour une robustesse maximale à l'éclairage
         try {
-            ij.plugin.ContrastEnhancer ce = new ij.plugin.ContrastEnhancer();
-            ce.equalize(ip);
+            Mat mat = OpenCVUtils.imageProcessorToMat(ip);
+            Mat claheMat = new Mat();
+            org.bytedeco.opencv.opencv_imgproc.CLAHE clahe = opencv_imgproc.createCLAHE(2.0, new Size(8, 8));
+            clahe.apply(mat, claheMat);
+
+            // Re-convertir en ImageProcessor
+            ip = OpenCVUtils.matToImageProcessor(claheMat);
+
+            mat.release();
+            claheMat.release();
         } catch (Exception e) {
-            e.printStackTrace();
+            // Fallback sur normalisation linéaire si OpenCV échoue
+            linearNormalize(ip);
         }
 
         return ip;
+    }
+
+    private static void linearNormalize(ImageProcessor ip) {
+        int width = ip.getWidth();
+        int height = ip.getHeight();
+        int min = 255, max = 0;
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int val = ip.getPixel(x, y);
+                if (val < min)
+                    min = val;
+                if (val > max)
+                    max = val;
+            }
+        }
+
+        if (max > min) {
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    int val = ip.getPixel(x, y);
+                    int normalized = (int) (((val - min) * 255.0) / (max - min));
+                    ip.putPixel(x, y, normalized);
+                }
+            }
+        }
     }
 }
