@@ -14,6 +14,9 @@ public class Pretraitement {
         // 1. Convertir en niveaux de gris et redimensionner
         ip = ip.convertToByte(true);
         ip = ip.resize(128, 128);
+        
+        // 1.5. Appliquer un léger flou gaussien pour réduire le bruit (Améliore la stabilité LBP)
+        ip.blurGaussian(0.8);
 
         // 2. Appliquer CLAHE via OpenCV pour une robustesse maximale à l'éclairage
         try {

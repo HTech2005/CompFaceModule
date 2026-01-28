@@ -54,7 +54,8 @@ public class RealtimeComparator {
             canvas.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
             // Pour calculer la moyenne
-            List<Double> scoresEuclidien = new ArrayList<>();
+            List<Double> scoresGlobaux = new ArrayList<>();
+            List<Double> scoresEuclidiensBruts = new ArrayList<>();
             List<Double> scoresCosinus = new ArrayList<>();
 
             int totalFramesProcessed = 0;
@@ -139,8 +140,8 @@ public class RealtimeComparator {
                             ImageProcessor ip = OpenCVUtils.matToImageProcessor(faceROI);
                             ip = Pretraitement.pt(ip);
 
-                            double[] H = Histogram.histo(ip);
-                            double[] LBPH = LBP.histogramLBP(LBP.LBP2D(ip));
+                            double[] H = Histogram.histoGrid(ip, 8, 8);
+                            double[] LBPH = LBP.histogramLBPGrid(LBP.LBP2D(ip), 8, 8);
                             double[] fused = Fusion.fus(H, LBPH);
                             double[] Nfused = NormalizeVector.normalize(fused);
 
@@ -150,11 +151,13 @@ public class RealtimeComparator {
 
                             double scoreTexture = Compatibilite.CalculCompatibilite(distChi2);
                             double scoreCosinus = cosSim * 100.0;
-                            double scoreGlobal = ((1.0 - (distChi2 / 2.0)) * 50.0 + (cosSim * 30.0)
-                                    + Math.max(0.0, (1.0 - (distEucl / 1.414)) * 20.0));
+                            double scoreEuclidienBrut = Math.max(0.0, (1.0 - (distEucl / 0.035)) * 100.0);
+                            double scoreGlobal = (scoreTexture * 0.6) + (scoreCosinus * 0.2)
+                                    + (scoreEuclidienBrut * 0.2);
 
                             // Stockage
-                            scoresEuclidien.add(scoreGlobal); // On stocke le score fusionné pour le résultat final
+                            scoresGlobaux.add(scoreGlobal);
+                            scoresEuclidiensBruts.add(scoreEuclidienBrut);
                             scoresCosinus.add(scoreCosinus);
                             totalFramesProcessed++;
 
@@ -206,7 +209,8 @@ public class RealtimeComparator {
             canvas.dispose();
 
             // === RÉSULTAT FINAL ===
-            double avgEuc = scoresEuclidien.stream().mapToDouble(d -> d).average().orElse(0.0);
+            double avgGlobal = scoresGlobaux.stream().mapToDouble(d -> d).average().orElse(0.0);
+            double avgEucl = scoresEuclidiensBruts.stream().mapToDouble(d -> d).average().orElse(0.0);
             double avgCos = scoresCosinus.stream().mapToDouble(d -> d).average().orElse(0.0);
 
             System.out.println("\n" + "═".repeat(60));
@@ -218,7 +222,8 @@ public class RealtimeComparator {
             } else {
                 System.out.printf("Images analysées : %d\n", totalFramesProcessed);
                 System.out.println("------------------------------------------------------------");
-                System.out.printf("SCORE MOYEN EUCLIDIEN : %.2f%%\n", avgEuc);
+                System.out.printf("SCORE MOYEN GLOBAL    : %.2f%%\n", avgGlobal);
+                System.out.printf("TAUX MOYEN EUCLIDIEN  : %.2f%%\n", avgEucl);
                 System.out.printf("SCORE MOYEN COSINUS   : %.2f%%\n", avgCos);
                 System.out.println("------------------------------------------------------------");
 

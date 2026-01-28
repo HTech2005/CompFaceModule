@@ -16,16 +16,15 @@ public class Decision {
         // 2. Score d'Alignement (Cosinus)
         double scoreCos = cosineSim * 100.0;
 
-        // 3. Score Géométrique (Euclidien)
-        // La distance euclidienne max sur histogrammes normalisés est sqrt(2) ~ 1.414
-        double scoreEucl = Math.max(0.0, (1.0 - (distEucl / 1.414)) * 100.0);
+        // Avec 128 blocs (8x8 Hist + 8x8 LBP), la distance max est ajustée
+        double scoreEucl = Math.max(0.0, (1.0 - (distEucl / 0.035)) * 100.0);
 
         // Score Global Fusionné
         // Texture (60%) + Cosinus (20%) + Euclidien (20%)
         double globalScore = (scoreChi2 * 0.6) + (scoreCos * 0.2) + (scoreEucl * 0.2);
 
-        // Seuil de 70% comme demandé
-        double seuilGlobal = 70.0;
+        // Seuil de 60% comme demandé
+        double seuilGlobal = 60.0;
 
         return globalScore >= seuilGlobal;
     }

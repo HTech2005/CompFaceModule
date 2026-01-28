@@ -1,0 +1,56 @@
+# Explication de la Grille 8x8 dans l'Analyse Faciale
+
+Ce document explique en détail le concept de la grille 8x8 utilisée lors de l'extraction des caractéristiques (Histogramme et LBP).
+
+## 1. À quoi ça ressemble ?
+Imaginez que l'on pose un **échiquier** (une grille) sur la photo du visage.
+- L'image du visage fait **128 x 128 pixels**.
+- On la découpe en **8 lignes** et **8 colonnes**.
+- Cela donne **64 petites cases** (ou cellules).
+- Chaque case fait donc `128 / 8 = 16` pixels de côté.
+
+```text
++---+---+---+---+---+---+---+---+
+| 1 | 2 | 3 | . | . | . | . | 8 |  <- Front / Cheveux
++---+---+---+---+---+---+---+---+
+| . | . | . | . | . | . | . | . |
++---+---+---+---+---+---+---+---+
+| . | . |👁️ | . | . |👁️ | . | . |  <- Yeux
++---+---+---+---+---+---+---+---+
+| . | . | . |👃 | . | . | . | . |  <- Nez
++---+---+---+---+---+---+---+---+
+| . | . | . |👄 | . | . | . | . |  <- Bouche
++---+---+---+---+---+---+---+---+
+| . | . | . | . | . | . | . | . |
++---+---+---+---+---+---+---+---+
+| . | . | . | . | . | . | . | . |
++---+---+---+---+---+---+---+---+
+|57 | . | . | . | . | . | . | 64|  <- Menton
++---+---+---+---+---+---+---+---+
+```
+
+## 2. Pourquoi fait-on ça ?
+C'est la méthode **LBPH (Local Binary Patterns Histograms)**.
+
+### Problème sans la grille (Approche Globale) :
+Si on calculait l'histogramme sur toute l'image d'un coup, l'ordinateur saurait "qu'il y a 20% de zones sombres et 80% de zones claires", mais il ne saurait pas **où** elles sont.
+- Un visage avec un œil au menton aurait la même "signature" qu'un visage normal !
+- On perdrait toute l'information de **structure** (la géométrie du visage).
+
+### Solution avec la grille 8x8 (Approche Locale) :
+En découpant l'image, on force l'ordinateur à analyser chaque zone indépendamment.
+- La case (3,3) contient l'œil gauche.
+- La case (5,4) contient la bouche.
+- Si on compare deux visages, on compare la case (3,3) du Visage A avec la case (3,3) du Visage B.
+
+Cela permet de vérifier non seulement que les "ingrédients" (textures) sont les mêmes, mais qu'ils sont **au bon endroit**.
+
+## 3. Comment ça se présente mathématiquement ?
+Pour chaque case de la grille, le programme calcule un petit histogramme (un vecteur de 256 nombres).
+
+Ensuite, on **colle** (concatène) tous ces petits histogrammes les uns à la suite des autres pour former un **Vecteur de Caractéristiques Géant**.
+
+- **1 case** = 256 valeurs.
+- **64 cases** (8x8) = $256 \times 64 = 16 384$ valeurs.
+
+C'est ce vecteur géant (la signature unique du visage) qui est ensuite comparé avec ceux de la base de données.

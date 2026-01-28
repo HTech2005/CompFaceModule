@@ -83,7 +83,7 @@ public class FaceService {
         double distEucl = Comparaison.distanceEuclidienne(N1, N2);
 
         double scoreTexture = Compatibilite.CalculCompatibilite(distChi2);
-        double scoreEucl = Math.max(0.0, (1.0 - (distEucl / 1.414)) * 100.0);
+        double scoreEucl = Math.max(0.0, (1.0 - (distEucl / 0.035)) * 100.0);
 
         // Poids équilibrés pour 8x8
         double globalScore = (scoreTexture * 0.6) + (cos * 100.0 * 0.2) + (scoreEucl * 0.2);
@@ -110,7 +110,7 @@ public class FaceService {
 
         String bestMatchFile = null;
         double bestScore = 0.0;
-        double threshold = 70.0; // Seuil de 70% comme demandé
+        double threshold = 60.0; // Seuil de 60% comme demandé
 
         for (Map.Entry<String, double[]> entry : databaseFeatures.entrySet()) {
             double distChi2 = Comparaison.distanceKhiCarre(features, entry.getValue());
@@ -118,7 +118,7 @@ public class FaceService {
             double distEucl = Comparaison.distanceEuclidienne(features, entry.getValue());
 
             double score = (Compatibilite.CalculCompatibilite(distChi2) * 0.6) + (cosSim * 20.0)
-                    + (Math.max(0.0, (1.0 - (distEucl / 1.414)) * 100.0) * 0.2);
+                    + (Math.max(0.0, (1.0 - (distEucl / 0.035)) * 100.0) * 0.2);
 
             if (score > bestScore) {
                 bestScore = score;
@@ -144,7 +144,7 @@ public class FaceService {
             double beu = Comparaison.distanceEuclidienne(features, bestFeatures);
 
             result.setScoreChi2(Compatibilite.CalculCompatibilite(bc2));
-            result.setScoreEuclidien(Math.max(0.0, (1.0 - (beu / 1.414)) * 100.0));
+            result.setScoreEuclidien(Math.max(0.0, (1.0 - (beu / 0.035)) * 100.0));
             result.setScoreCosinus(bcs * 100.0);
             result.setMatch(Decision.dec(bc2, bcs, beu));
         }
