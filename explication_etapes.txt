@@ -22,7 +22,7 @@ Ce mode permet de vérifier si deux photos appartiennent à la même personne.
    - **Fusion** : Concaténation des vecteurs H et LBP.
    - **Normalisation** : Le vecteur final est normalisé pour que sa longueur soit égale à 1 (indispensable pour le calcul Cosinus).
 5. **Calcul de Ressemblance** : Les deux vecteurs sont comparés utilisant 3 formules de distance (voir section Formules).
-6. **Décision** : Un score global pondéré est calculé. Si > 70%, c'est un match.
+6. **Décision** : Un score global pondéré est calculé. Si > 60%, c'est un match.
 
 ---
 
@@ -40,7 +40,7 @@ Ce mode identifie une personne en direct via la webcam en la comparant à toute 
    - Pour chaque personne en base, un score de compatibilité est calculé.
 7. **Filtrage** : On garde le candidat ayant le meilleur score.
 8. **Validation** :
-   - Si le meilleur score > 70% : **Identité confirmée**.
+   - Si le meilleur score > 60% : **Identité confirmée**.
    - Sinon : **Inconnu**.
 
 ---
