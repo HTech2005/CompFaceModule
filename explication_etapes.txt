@@ -76,4 +76,4 @@ $$ScoreGlobal = (ScoreChi2 \times 0.6) + (ScoreCosinus \times 0.2) + (ScoreEucli
 - **20% pour Cosinus** : Aide à valider la structure.
 - **20% pour Euclidien** : Filet de sécurité global.
 
-Si le résultat final dépasse **70%**, le système considère que c'est la même personne.
+Si le résultat final dépasse **60%**, le système considère que c'est la même personne.
