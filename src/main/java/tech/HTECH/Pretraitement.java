@@ -15,7 +15,10 @@ public class Pretraitement {
         ip = ip.convertToByte(true);
         ip = ip.resize(128, 128);
         
-        // 1.5. Appliquer un léger flou gaussien pour réduire le bruit (Améliore la stabilité LBP)
+        // 1.5. Appliquer un filtre Médian (Améliore la robustesse aux lunettes en lissant les montures fines)
+        ip.medianFilter();
+        
+        // 1.6. Appliquer un léger flou gaussien pour réduire le bruit
         ip.blurGaussian(0.8);
 
         // 2. Appliquer CLAHE via OpenCV pour une robustesse maximale à l'éclairage

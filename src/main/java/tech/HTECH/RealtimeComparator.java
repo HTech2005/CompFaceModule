@@ -33,10 +33,18 @@ public class RealtimeComparator {
     public void scanFaceFor20Seconds() {
         Loader.load(org.bytedeco.opencv.global.opencv_core.class);
 
-        VideoCapture cap = new VideoCapture(0);
+        org.bytedeco.opencv.opencv_videoio.VideoCapture cap = new org.bytedeco.opencv.opencv_videoio.VideoCapture(0);
         if (!cap.isOpened()) {
             System.err.println("Impossible d'ouvrir la caméra !");
             return;
+        }
+
+        // "FLASH" : Forcer la luminosité au maximum
+        try {
+            cap.set(org.bytedeco.opencv.global.opencv_videoio.CAP_PROP_BRIGHTNESS, 255);
+            cap.set(org.bytedeco.opencv.global.opencv_videoio.CAP_PROP_GAIN, 255);
+        } catch (Exception e) {
+            System.out.println("Avertissement: Impossible de régler la luminosité matérielle.");
         }
 
         CascadeClassifier faceDetector = new CascadeClassifier(cascadePath);
@@ -60,12 +68,12 @@ public class RealtimeComparator {
 
             int totalFramesProcessed = 0;
 
-            long startTime = System.currentTimeMillis();
-            long endTime = startTime + 20_000; // 20 secondes
+            long stableStartTime = 0;
+            boolean isStable = false;
 
-            System.out.println("Scan démarré... Placez votre visage dans le cadre pendant 20 secondes.");
+            System.out.println("Scan démarré... L'analyse s'arrêtera après 5 secondes de stabilité (>= 50%).");
 
-            while (System.currentTimeMillis() < endTime && canvas.isVisible()) {
+            while (canvas.isVisible()) {
                 if (!cap.read(frame) || frame.empty())
                     continue;
 
@@ -105,16 +113,19 @@ public class RealtimeComparator {
                 opencv_imgproc.line(frame, new Point(x + boxSize, y + boxSize), new Point(x + boxSize, y + boxSize - c),
                         guideColor, th, opencv_imgproc.LINE_AA, 0);
 
-                long remaining = (endTime - System.currentTimeMillis()) / 1000;
-                String timeText = "TEMPS : " + remaining + " s";
+                String infoText = "ANALYSE EN COURS...";
+                if (stableStartTime > 0) {
+                    double elapsed = (System.currentTimeMillis() - stableStartTime) / 1000.0;
+                    infoText = String.format("STABILITÉ : %.1f s / 5s", elapsed);
+                }
 
-                // Centrer le texte du temps en haut
+                // Centrer le texte
                 int[] baseline = new int[1];
-                Size textSize = opencv_imgproc.getTextSize(timeText, opencv_imgproc.FONT_HERSHEY_SIMPLEX, 1.0, 2,
+                Size textSize = opencv_imgproc.getTextSize(infoText, opencv_imgproc.FONT_HERSHEY_SIMPLEX, 0.8, 2,
                         baseline);
                 Point textOrg = new Point((width - textSize.width()) / 2, 50);
 
-                opencv_imgproc.putText(frame, timeText, textOrg, opencv_imgproc.FONT_HERSHEY_SIMPLEX, 1.0,
+                opencv_imgproc.putText(frame, infoText, textOrg, opencv_imgproc.FONT_HERSHEY_SIMPLEX, 0.8,
                         new Scalar(255, 255, 255, 0), 2, opencv_imgproc.LINE_AA, false);
 
                 // Détection du visage
@@ -152,8 +163,20 @@ public class RealtimeComparator {
                             double scoreTexture = Compatibilite.CalculCompatibilite(distChi2);
                             double scoreCosinus = cosSim * 100.0;
                             double scoreEuclidienBrut = Math.max(0.0, (1.0 - (distEucl / 0.035)) * 100.0);
-                            double scoreGlobal = (scoreTexture * 0.6) + (scoreCosinus * 0.2)
+                            double scoreGlobal = (scoreTexture * 0.4) + (scoreCosinus * 0.4)
                                     + (scoreEuclidienBrut * 0.2);
+
+                            // --- LOGIQUE DE STABILITÉ ---
+                            if (scoreGlobal >= 50.0) {
+                                if (stableStartTime == 0) stableStartTime = System.currentTimeMillis();
+                                
+                                if (System.currentTimeMillis() - stableStartTime >= 5000) {
+                                    System.out.println(">>> IDENTITÉ CONFIRMÉE (Stable 5s)");
+                                    break; // Sortie de la boucle while
+                                }
+                            } else {
+                                stableStartTime = 0;
+                            }
 
                             // Stockage
                             scoresGlobaux.add(scoreGlobal);

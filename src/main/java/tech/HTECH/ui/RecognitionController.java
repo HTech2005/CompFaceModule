@@ -10,8 +10,8 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber;
-import org.bytedeco.javacv.OpenCVFrameConverter;
 import org.bytedeco.javacv.VideoInputFrameGrabber;
+import org.bytedeco.javacv.OpenCVFrameConverter;
 import org.bytedeco.opencv.opencv_core.Mat;
 import tech.HTECH.FaceDetection;
 import tech.HTECH.OpenCVUtils;
@@ -43,45 +43,67 @@ public class RecognitionController {
     private OpenCVFrameConverter.ToMat converter = new OpenCVFrameConverter.ToMat();
     private FaceService faceService = new FaceService();
 
-    private int secondsLeft = 10;
-    private int lastRecognitionSecond = -1;
+    private String stableName = null;
+    private long stableStartMillis = 0;
     private boolean isScanning = false;
+    private boolean isProcessing = false;
+    private long lastRecognitionTime = 0;
 
     @FXML
     public void startCamera() {
-        try {
-            grabber = new VideoInputFrameGrabber(0);
-            grabber.start();
+        btnStart.setDisable(true);
+        lblWaiting.setVisible(true);
+        lblWaiting.setText("Démarrage de la caméra...");
 
-            btnStart.setDisable(true);
-            btnStop.setDisable(false);
-            lblWaiting.setVisible(false);
-
-            secondsLeft = 10;
-            isScanning = true;
-            overlay.setVisible(true);
-
-            timer = Executors.newSingleThreadScheduledExecutor();
-            timer.scheduleAtFixedRate(this::grabFrame, 0, 33, TimeUnit.MILLISECONDS);
-
-            // Background thread for countdown
-            new Thread(() -> {
-                while (secondsLeft > 0 && isScanning) {
+        new Thread(() -> {
+            try {
+                // S'assurer que l'ancien grabber est bien libéré avant de recommencer
+                try { if (grabber != null) { grabber.stop(); grabber.release(); } } catch (Exception e) {}
+                
+                // Tentative 1 : VideoInputFrameGrabber (Standard Windows)
+                boolean success = false;
+                try {
+                    System.out.println("[INFO] Tentative VideoInputFrameGrabber(0)...");
+                    grabber = new VideoInputFrameGrabber(0);
+                    grabber.start();
+                    success = true;
+                } catch (Exception e1) {
+                    System.err.println("[WARN] VideoInput échoué, essai alternatifs...");
                     try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
+                        // Tentative 2 : OpenCVFrameGrabber (Fallback)
+                        grabber = new org.bytedeco.javacv.OpenCVFrameGrabber(0);
+                        grabber.start();
+                        success = true;
+                    } catch (Exception e2) {
+                        throw new Exception("Aucun module de capture vidéo n'a fonctionné.");
                     }
-                    secondsLeft--;
-                    Platform.runLater(() -> lblTimer.setText(secondsLeft + "s"));
                 }
-                if (isScanning) {
-                    Platform.runLater(this::stopCamera);
-                }
-            }).start();
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+                if (success) {
+                    System.out.println("[INFO] Caméra opérationnelle.");
+                    Platform.runLater(() -> {
+                        btnStop.setDisable(false);
+                        lblWaiting.setVisible(false);
+                        stableName = null;
+                        stableStartMillis = 0;
+                        isScanning = true;
+                        overlay.setVisible(true);
+                        lblTimer.setText("Analyse...");
+
+                        timer = Executors.newSingleThreadScheduledExecutor();
+                        timer.scheduleWithFixedDelay(this::grabFrame, 0, 33, TimeUnit.MILLISECONDS);
+                    });
+                }
+            } catch (Exception e) {
+                System.err.println("[ERREUR CRITIQUE CAMÉRA] " + e.getMessage());
+                e.printStackTrace();
+                Platform.runLater(() -> {
+                    btnStart.setDisable(false);
+                    lblWaiting.setText("Erreur Caméra : " + e.getMessage());
+                    lblWaiting.setVisible(true);
+                });
+            }
+        }).start();
     }
 
     private void grabFrame() {
@@ -96,10 +118,22 @@ public class RecognitionController {
                 javafx.scene.image.Image image = OpenCVUtils.matToImage(mat);
                 Platform.runLater(() -> videoFeed.setImage(image));
 
-                // Perform recognition every ~1 second
-                if (isScanning && secondsLeft != lastRecognitionSecond) {
-                    lastRecognitionSecond = secondsLeft;
-                    processRecognition(mat);
+                // Analyse toute les 500ms pour ne pas saturer le CPU et le thread UI
+                long now = System.currentTimeMillis();
+                if (isScanning && !isProcessing && (now - lastRecognitionTime > 500)) {
+                    isProcessing = true;
+                    lastRecognitionTime = now;
+                    
+                    // On clone le mat pour l'analyser dans un thread séparé sans bloquer le flux vidéo
+                    Mat processingMat = mat.clone();
+                    new Thread(() -> {
+                        try {
+                            processRecognition(processingMat);
+                        } finally {
+                            processingMat.release();
+                            isProcessing = false;
+                        }
+                    }).start();
                 }
             }
         } catch (Exception e) {
@@ -137,10 +171,51 @@ public class RecognitionController {
                 Platform.runLater(() -> faceGuide.setStyle(
                         "-fx-border-color: #00ff88; -fx-border-width: 4; -fx-border-style: solid; -fx-border-radius: 15;"));
                 FaceService.RecognitionResult result = faceService.recognizeFace(face);
+                
+                // --- LOGIQUE DE STABILITÉ 5s ---
+                double currentScore = result.getScoreGlobal();
+                String currentName = result.getBestMatch();
+
+                // Robustesse lunettes : Si on est stable, on accepte un score un peu plus bas (50% au lieu de 60%)
+                if (currentScore >= 50.0 && currentName != null) {
+                    if (currentName.equals(stableName)) {
+                        long elapsed = System.currentTimeMillis() - stableStartMillis;
+                        double seconds = elapsed / 1000.0;
+                        
+                        Platform.runLater(() -> lblTimer.setText(String.format("Analyse : %.1f s / 5s", seconds)));
+                        
+                        // Si stable pendant 5s OU validation très haute immédiate
+                        if (elapsed >= 5000 || currentScore >= 90.0) {
+                             Platform.runLater(() -> {
+                                 updateUI(result);
+                                 stopCamera();
+                                 lblStatus.setText("✅ IDENTITÉ CONFIRMÉE (Stable)");
+                             });
+                             return;
+                        }
+                    } else {
+                        // Nouveau visage identifié
+                        stableName = currentName;
+                        stableStartMillis = System.currentTimeMillis();
+                        Platform.runLater(() -> lblTimer.setText("Analyse : 0.0s"));
+                    }
+                } else {
+                    // Perte de suivi ou score trop bas
+                    stableName = null;
+                    stableStartMillis = 0;
+                    Platform.runLater(() -> lblTimer.setText("Analyse..."));
+                }
+
                 if (result.isFound()) {
                     HistoryService.getInstance().addLog("Reconnaissance TR: " + result.getBestMatch() + " ("
                             + String.format("%.1f", result.getScoreGlobal()) + "%)");
                 }
+                
+                // On considère comme "trouvé" si c'est stable, même si le score est entre 50 et 60
+                if (currentScore >= 50.0 && currentName != null && currentName.equals(stableName)) {
+                    result.setFound(true); 
+                }
+
                 Platform.runLater(() -> updateUI(result));
             } else {
                 // Notifier que rien n'est détecté

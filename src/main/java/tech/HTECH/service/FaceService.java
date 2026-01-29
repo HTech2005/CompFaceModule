@@ -117,7 +117,8 @@ public class FaceService {
             double cosSim = Comparaison.similitudeCosinus(features, entry.getValue());
             double distEucl = Comparaison.distanceEuclidienne(features, entry.getValue());
 
-            double score = (Compatibilite.CalculCompatibilite(distChi2) * 0.6) + (cosSim * 20.0)
+            // Poids rééquilibrés : 40% Texture (Chi2), 40% Global (Cosine), 20% Géométrie (Eucl)
+            double score = (Compatibilite.CalculCompatibilite(distChi2) * 0.4) + (cosSim * 40.0)
                     + (Math.max(0.0, (1.0 - (distEucl / 0.035)) * 100.0) * 0.2);
 
             if (score > bestScore) {

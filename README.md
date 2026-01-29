@@ -1,72 +1,97 @@
 # FaceModule - Logiciel de Reconnaissance et Comparaison Faciale
 
-Ce projet est une application desktop JavaFX utilisant OpenCV et des techniques classiques de Computer Vision (LBP, Histogrammes, CLAHE) pour la reconnaissance faciale.
+Ce projet est une application desktop JavaFX utilisant OpenCV et des techniques avancées de Computer Vision pour la reconnaissance faciale.
 
-## 📂 Architecture des Fichiers et Rôles
+## 🚀 Comment lancer le projet
 
-### 🖥️ Interface Utilisateur (UI)
-- **[AppJavaFX.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/ui/AppJavaFX.java)** : Point d'entrée de l'application. Fenêtre principale (800x400).
-- **[MainController.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/ui/MainController.java)** : Navigation latérale et gestion dynamique.
-- **[ComparisonController.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/ui/ComparisonController.java)** (CDV) : Comparaison locale et détection d'erreurs.
-- **[DashboardController.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/ui/DashboardController.java)** : Gestion BDD (Ajout, Suppr, Rename).
-- **[StatisticsController.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/ui/StatisticsController.java)** : Reporting, stats et galerie.
-- **[RecognitionController.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/ui/RecognitionController.java)** (TR) : Reconnaissance temps réel.
-- **[AnalysisController.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/ui/AnalysisController.java)** (CV) : Analyse traits biométriques.
-
-### 🧠 Logique Métier (Service)
-- **[FaceService.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/service/FaceService.java)** : Indexation, cache statique et extraction algorithmique.
-- **[HistoryService.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/service/HistoryService.java)** : Système de logs, stats et détection auto de FP/FN.
-
-### 🔬 Algorithmes de Vision
-- **[FaceDetection.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/FaceDetection.java)** : Utilise Haar Cascades pour trouver les visages. Applique un recadrage intelligent de 15% pour se concentrer sur les traits internes.
-- **[Pretraitement.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/Pretraitement.java)** : Prépare l'image. Redimensionnement en 128x128 et application de **CLAHE** pour neutraliser les variations de lumière.
-- **[LBP.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/LBP.java)** : Extrait la texture (le "grain" de la peau). Compare chaque pixel à ses 8 voisins pour créer une signature unique.
-- **[Histogram.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/Histogram.java)** : Analyse la distribution des intensités. Utilisé en mode "Grid" (8x8) pour capturer la structure locale du visage.
-- **[Decision.java](file:///c:/Users/HP/Desktop/TNI/CompFaceModule/src/main/java/tech/HTECH/Decision.java)** : Fusionne les distances (Chi-Carré, Cosinus, Euclidienne) avec des poids spécifiques (60%, 20%, 20%) pour donner le verdict final.
+1.  **Prérequis** : Java 17+ et Maven installés.
+2.  **Configuration** : Placez les images de référence (.jpg/.png) dans le dossier `src/main/bdd`. Le nom du fichier sera utilisé comme nom de la personne.
+3.  **Lancement** :
+    ```bash
+    mvn javafx:run
+    ```
+    *Note : Le mode Temps Réel nécessite une caméra active.*
 
 ---
 
-## 🔍 Explication Ligne par Ligne (Cœur de l'Algorithme)
+## 🔬 Fonctionnement Technique Approfondi
 
-### 1. La Détection (FaceDetection.java)
-```java
-// On applique CLAHE pour "aplanir" la lumière
-CLAHE clahe = opencv_imgproc.createCLAHE(2.0, new Size(8, 8));
-clahe.apply(gray, claheApplied);
+Le système s'appuie sur une extraction locale de caractéristiques et une triple expertise mathématique.
 
-// minNeighbors = 4 : assure que l'objet détecté ressemble vraiment à un visage
-classifier.detectMultiScale(gray, faces, 1.1, 4, 0, new Size(100, 100), new Size(0, 0));
-```
+### 1. CDV : Comparaison de Visages (Mode 1:1)
+Permet de vérifier si deux visages sont identiques.
 
-### 2. L'Extraction de Texture (LBP.java)
-LBP (Local Binary Patterns) est la clé de la précision :
-- Pour chaque pixel central, on regarde ses 8 voisins.
-- Si le voisin est plus clair, on met `1`, sinon `0`.
-- On obtient un code binaire de 8 bits (0-255) qui représente la "forme" locale de la peau à cet endroit précis.
+**Étapes du processus :**
+- **Détection** : Utilise `FaceDetection.java`. L'image est passée en gris, filtrée par CLAHE (Contrast Limited Adaptive Histogram Equalization) pour l'éclairage, puis détectée via Haar Cascade. Un recadrage (crop) de 15% est appliqué.
+- **Prétraitement** : Dans `Pretraitement.java`.
+    - Redimensionnement : Matrice **128x128**.
+    - Filtre Médian + Flou Gaussien (sigma=0.8) pour le bruit.
+    - CLAHE final pour accentuer les traits.
+- **Extraction** : Utilise `Histogram.java` et `LBP.java`. Le visage est divisé en une **Grille 8x8** (64 cellules de 16x16 pixels).
+- **Vecteur de Caractéristiques** : Chaque cellule génère un histogramme de 256 valeurs. Concaténation de 64 cellules = Vecteur de **16 384** valeurs.
+- **Score Global** : Calculé dans `FaceService.java` ou `Decision.java`.
 
-### 3. La Fusion et Normalisation (FaceService.java)
-```java
-// On divise le visage en 64 zones (8x8)
-double[] h = Histogram.histoGrid(ip, 8, 8); 
-double[] lbp = LBP.histogramLBPGrid(LBP.LBP2D(ip), 8, 8);
+### 2. TR : Reconnaissance Temps Réel (Mode 1:N)
+Identifie une personne en direct via webcam.
 
-// On fusionne les deux types d'informations (forme + texture)
-double[] fusion = Fusion.fus(h, lbp);
+**Étapes du processus :**
+- **Cadrage** : Un cadre guide (vert) force l'utilisateur à se centrer.
+- **Boucle d'Analyse** : Le flux vidéo est traité en continu via `RecognitionController.java`.
+- **Recherche** : Chaque visage détecté est comparé à TOUT le cache de la base de données (`FaceService.java`).
+- **Logique de Verdict** :
+    - **Validation Immédiate** : Score > 70%.
+    - **Validation par Stabilité** : Si le score est entre 50% et 60%, le système attend **5 secondes** de stabilité sur la même identité avant de valider l'accès.
+- **Pondération des Scores (TR)** :
+    - 40% Texture (Chi-Carré)
+    - 40% Structure (Cosinus)
+    - 20% Géométrie (Euclidiènne)
 
-// On normalise (Somme = 1) pour pouvoir comparer des images de luminosités différentes
-double[] normalized = NormalizeVector.normalize(fusion);
-```
+### 3. CV : Analyse Visuelle (Module Biométrique)
+Analyse les traits spécifiques du visage dans `AnalysisController.java` et `FaceAnalyzer.java`.
 
-### 4. Le Verdict (Decision.java)
-Le système ne se base pas sur un seul chiffre, mais sur une **triple expertise** :
-- **Chi-Carré** : Très sensible aux changements de texture (peau). Poids dominant (60%).
-- **Cosinus** : Regarde si les vecteurs de caractéristiques sont "orientés" de la même façon (alignement).
-- **Euclidien** : Regarde la distance brute entre les valeurs.
+**Étapes du processus :**
+- Détection des composants (Haar Cascades spécifiques).
+- Calcul des dimensions et distances en pixels (px) :
+    - Distance Inter-oculaire (Yeux).
+    - Largeur du nez.
+    - Largeur de la bouche.
+- Visualisation : Dessin de boîtes englobantes colorées sur l'interface.
 
 ---
 
-## 🚀 Installation et Utilisation
-1.  Assurez-vous d'avoir Java 17+ et Maven installés.
-2.  Placez les images de référence dans `src/main/bdd`.
-3.  Lancez avec : `mvn javafx:run`
-4.  Le mode **Temps Réel** nécessite une webcam. Positionnez votre visage dans le **cadre vert en pointillés** pour une analyse optimale.
+## 📐 Formules Mathématiques & Matrices
+
+Le système utilise trois "experts" pour une décision robuste. Les calculs sont effectués dans `Comparaison.java`.
+
+### A. Distance Chi-Carré ($\chi^2$) - Expert Texture
+Utilisée pour comparer les histogrammes LBP (Local Binary Patterns).
+- **Formule** : $\chi^2(A,B) = \sum \frac{(A_i - B_i)^2}{A_i + B_i}$
+- **Signification** : Mesure la divergence entre les répartitions de texture fine.
+- **Fichier** : `Comparaison.distanceKhiCarre`
+
+### B. Similitude Cosinus ($Cos$) - Expert Structure
+Mesure l'angle entre deux vecteurs.
+- **Formule** : $Cos(\theta) = \frac{A \cdot B}{\|A\| \|B\|}$
+- **Signification** : Indépendant de la luminosité brute. Mesure la corrélation structurelle des traits.
+- **Fichier** : `Comparaison.similitudeCosinus`
+
+### C. Distance Euclidienne ($d$) - Expert Géométrie
+Distance géométrique directe par la méthode des moindres carrés.
+- **Formule** : $d(A,B) = \sqrt{\sum (A_i - B_i)^2}$
+- **Signification** : Écart global entre les signatures.
+- **Fichier** : `Comparaison.distanceEuclidienne`
+
+---
+
+## 🛠️ Spécifications Techniques Résumées
+
+| Paramètre | Valeur | Fichier Source |
+| :--- | :--- | :--- |
+| Taille Image | 128 x 128 | `Pretraitement.java` |
+| Division Grille | 8 x 8 (64 blocs) | `Histogram.java` |
+| Taille Vecteur | 16 384 valeurs | `Fusion.java` |
+| Seuil Validation | 70% | `Decision.java` |
+| Stabilité TR | 5 secondes | `RecognitionController.java` |
+
+---
+*Développement par HTECH 2005*

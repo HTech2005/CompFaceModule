@@ -1,0 +1,102 @@
+================================================================================
+          DOCUMENTATION COMPLÈTE DU MODULE DE RECONNAISSANCE FACIALE
+================================================================================
+
+Ce document explique le fonctionnement de la plateforme "CompFaceModule" de A à Z,
+du moment où une image est capturée jusqu'à la décision finale d'accès.
+
+--------------------------------------------------------------------------------
+1. CAPTURE ET DÉTECTION (L'ENTRÉE)
+--------------------------------------------------------------------------------
+- Capture : Le système utilise la bibliothèque JavaCV (interface pour OpenCV) 
+  pour récupérer le flux vidéo de la caméra.
+- Détection : Un classificateur en cascade (Haar Cascade) parcourt l'image pour
+  trouver les visages. Une zone de guide (cadre vert) est affichée à l'écran
+  pour que l'utilisateur place correctement son visage.
+- Isolation : Une fois le visage détecté, il est "découpé" (crop) pour ne garder
+  que la zone utile à l'analyse mathématique.
+
+--------------------------------------------------------------------------------
+2. PRÉTRAITEMENT (NETTOYAGE DE L'IMAGE)
+--------------------------------------------------------------------------------
+Avant l'analyse, l'image subit 4 étapes cruciales pour être robuste :
+1. Conversion en Gris : On supprime les couleurs pour ne garder que la texture.
+2. Filtre Médian : Un filtre qui lisse les petits défauts (comme les montures de 
+   lunettes fines) tout en gardant les traits principaux.
+3. CLAHE (Contrast Limited Adaptive Histogram Equalization) : C'est l'étape la 
+   plus importante. Elle rééquilibre l'éclairage de manière intelligente pour 
+   que le système fonctionne aussi bien dans une pièce sombre qu'éclairée.
+4. Redimensionnement : L'image est ramenée à une taille fixe (128x128 pixels).
+
+--------------------------------------------------------------------------------
+3. EXTRACTION DES CARACTÉRISTIQUES (SIGNATURE UNIQUE)
+--------------------------------------------------------------------------------
+Le logiciel extrait deux types de "signatures" du visage :
+
+A. LBP (Local Binary Patterns) - Texture Fine :
+   Le visage est divisé en une grille de 8x8 blocs noirs et blancs. Pour chaque
+   pixel, on regarde ses voisins pour coder les micro-textures (pores, rides, 
+   détails des yeux). C'est très précis pour différencier deux personnes.
+
+B. Histogrammes de Grille - Structure Globale :
+   On analyse la répartition de la lumière sur les 64 blocs de la grille. Cela
+   permet de capturer la structure générale du visage.
+
+Ces données sont fusionnées en un seul "Vecteur de Caractéristiques" (une longue 
+liste de chiffres qui représente mathématiquement votre visage).
+
+--------------------------------------------------------------------------------
+4. COMPARAISON ET SCORES (LES MATHÉMATIQUES)
+--------------------------------------------------------------------------------
+Le système compare votre visage actuel avec ceux stockés dans la base de données
+(dossier src/main/bdd) en utilisant trois mesures :
+
+1. Distance Chi-Carré (40%) : Mesure la ressemblance de la texture (LBP).
+2. Similitude Cosinus (40%) : Mesure l'angle entre les vecteurs (très robuste 
+   aux changements de luminosité et aux lunettes).
+3. Distance Euclidienne (20%) : Mesure la distance directe entre les points.
+
+--------------------------------------------------------------------------------
+5. LOGIQUE DE DÉCISION (LE VERDICT)
+--------------------------------------------------------------------------------
+Le système utilise une règle de validation intelligente :
+
+- Validation Directe : Si le score global est supérieur ou égal à 60%, l'accès 
+  est accordé immédiatement.
+- Validation par Stabilité (5 secondes) : Si une personne est reconnue avec un 
+  score entre 50% et 60%, le système attend 5 secondes. Si l'identité reste la 
+  même et stable, l'accès est accordé. 
+  -> Cette fonction est idéale pour gérer les cas plus difficiles comme le port
+     de lunettes ou une barbe naissante.
+
+--------------------------------------------------------------------------------
+6. LE MODULE CDV (COMPARAISON DE VISAGE)
+--------------------------------------------------------------------------------
+Le module CDV est l'outil de comparaison manuelle 1-to-1 de la plateforme :
+
+- Principe : Au lieu de scanner une base de données, vous téléchargez deux 
+  images manuellement (Image 1 et Image 2).
+- Analyse Détaillée : Le système applique le même prétraitement et la même 
+  extraction de caractéristiques sur les deux visages.
+- Affichage Transparent : Contrairement à la reconnaissance automatique qui 
+  donne un verdict rapide, le CDV affiche le détail précis de chaque "expert" :
+    * Score Chi2 (Texture locale)
+    * Score Cosinus (Forme globale)
+    * Score Euclidien (Distance brute)
+    * Score Global (La moyenne pondérée 40/40/20)
+- Utilité : Il est utilisé pour vérifier scientifiquement la ressemblance entre 
+  deux photos spécifiques ou pour auditer pourquoi le système a validé ou refusé 
+  un accès.
+
+--------------------------------------------------------------------------------
+7. STOCKAGE ET HISTORIQUE
+--------------------------------------------------------------------------------
+- Base de données : Il suffit de placer une photo (.jpg ou .png) dans le 
+  dossier `src/main/bdd` avec le nom de la personne. Le système l'apprendra 
+  automatiquement au prochain lancement.
+- Historique : Chaque succès est enregistré dans la section "Historique" avec
+  l'heure, le nom et le score obtenu.
+
+================================================================================
+Fin du document - HTECH 2005
+================================================================================
