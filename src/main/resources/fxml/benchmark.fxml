@@ -7,8 +7,14 @@
 <?import javafx.scene.chart.LineChart?>
 <?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.NumberAxis?>
+<?import java.net.URL?>
+<?import javafx.geometry.Side?>
 
 <VBox xmlns:fx="http://javafx.com/fxml" fx:controller="tech.HTECH.ui.BenchmarkController" spacing="20" style="-fx-background-color: #121212;">
+    <stylesheets>
+        <URL value="@/style/benchmark.css" />
+    </stylesheets>
+    
     <padding>
         <Insets top="20" right="20" bottom="20" left="20"/>
     </padding>
@@ -16,8 +22,8 @@
     <HBox alignment="CENTER_LEFT" spacing="15">
         <Label text="Laboratoire de Tests Scientifiques" style="-fx-text-fill: white; -fx-font-size: 26; -fx-font-weight: bold;"/>
         <Region HBox.hgrow="ALWAYS" />
-        <Button text="Analyse 1:N" onAction="#handleRunBenchmark" style="-fx-background-color: #6200ee; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 15; -fx-background-radius: 5;"/>
-        <Button text="Analyse All:N (Complet)" onAction="#handleRunFullBenchmark" style="-fx-background-color: #3700b3; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 15; -fx-background-radius: 5;"/>
+        <Button fx:id="btnRunBenchmark" text="Analyse 1:N" onAction="#handleRunBenchmark" style="-fx-background-color: #6200ee; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 15; -fx-background-radius: 5;"/>
+        <Button fx:id="btnRunFullBenchmark" text="Analyse All:N (Complet)" onAction="#handleRunFullBenchmark" style="-fx-background-color: #3700b3; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 15; -fx-background-radius: 5;"/>
         <Button text="Exporter CSV" onAction="#handleExportCSV" style="-fx-background-color: #03dac6; -fx-text-fill: black; -fx-font-weight: bold; -fx-padding: 8 15; -fx-background-radius: 5;"/>
     </HBox>
 
@@ -29,82 +35,100 @@
     </HBox>
 
     <!-- Cartes de Statistiques -->
-    <HBox spacing="20">
-        <VBox spacing="10" HBox.hgrow="ALWAYS" style="-fx-background-color: #1e1e1e; -fx-padding: 20; -fx-background-radius: 10; -fx-border-color: #333333; -fx-border-radius: 10;">
-            <Label text="Total Comparaisons" style="-fx-text-fill: #aaaaaa; -fx-font-size: 14;"/>
-            <Label fx:id="lblTotal" text="0" style="-fx-text-fill: white; -fx-font-size: 32; -fx-font-weight: bold;"/>
-        </VBox>
-        <VBox spacing="10" HBox.hgrow="ALWAYS" style="-fx-background-color: #1e1e1e; -fx-padding: 20; -fx-background-radius: 10; -fx-border-color: #333333; -fx-border-radius: 10;">
-            <Label text="Taux de Faux Positifs (FAR)" style="-fx-text-fill: #aaaaaa; -fx-font-size: 14;"/>
-            <Label fx:id="lblFAR" text="0.00%" style="-fx-text-fill: #ff4e4e; -fx-font-size: 32; -fx-font-weight: bold;"/>
-        </VBox>
-        <VBox spacing="10" HBox.hgrow="ALWAYS" style="-fx-background-color: #1e1e1e; -fx-padding: 20; -fx-background-radius: 10; -fx-border-color: #333333; -fx-border-radius: 10;">
-            <Label text="Taux de Faux Négatifs (FRR)" style="-fx-text-fill: #aaaaaa; -fx-font-size: 14;"/>
-            <Label fx:id="lblFRR" text="0.00%" style="-fx-text-fill: #ff9900; -fx-font-size: 32; -fx-font-weight: bold;"/>
-        </VBox>
+    <VBox spacing="10">
+        <HBox spacing="20">
+            <VBox spacing="10" HBox.hgrow="ALWAYS" style="-fx-background-color: #1e1e1e; -fx-padding: 15; -fx-background-radius: 10; -fx-border-color: #333333; -fx-border-radius: 10;">
+                <Label text="Total Comparaisons" style="-fx-text-fill: #aaaaaa; -fx-font-size: 12;"/>
+                <Label fx:id="lblTotal" text="0" style="-fx-text-fill: white; -fx-font-size: 24; -fx-font-weight: bold;"/>
+            </VBox>
+            <VBox spacing="10" HBox.hgrow="ALWAYS" style="-fx-background-color: #1e1e1e; -fx-padding: 15; -fx-background-radius: 10; -fx-border-color: #333333; -fx-border-radius: 10;">
+                <Label text="Faux Positifs (FAR)" style="-fx-text-fill: #aaaaaa; -fx-font-size: 12;"/>
+                <Label fx:id="lblFAR" text="0.00%" style="-fx-text-fill: #ff4e4e; -fx-font-size: 24; -fx-font-weight: bold;"/>
+            </VBox>
+            <VBox spacing="10" HBox.hgrow="ALWAYS" style="-fx-background-color: #1e1e1e; -fx-padding: 15; -fx-background-radius: 10; -fx-border-color: #333333; -fx-border-radius: 10;">
+                <Label text="Faux Négatifs (FRR)" style="-fx-text-fill: #aaaaaa; -fx-font-size: 12;"/>
+                <Label fx:id="lblFRR" text="0.00%" style="-fx-text-fill: #ff9900; -fx-font-size: 24; -fx-font-weight: bold;"/>
+            </VBox>
+            <VBox spacing="10" HBox.hgrow="ALWAYS" style="-fx-background-color: #1e1e1e; -fx-padding: 15; -fx-background-radius: 10; -fx-border-color: #333333; -fx-border-radius: 10;">
+                <Label text="F1-Score" style="-fx-text-fill: #aaaaaa; -fx-font-size: 12;"/>
+                <Label fx:id="lblF1" text="0.00" style="-fx-text-fill: #00b0ff; -fx-font-size: 24; -fx-font-weight: bold;"/>
+            </VBox>
+        </HBox>
+        <HBox spacing="20">
+            <VBox spacing="10" HBox.hgrow="ALWAYS" style="-fx-background-color: #1e1e1e; -fx-padding: 15; -fx-background-radius: 10; -fx-border-color: #333333; -fx-border-radius: 10;">
+                <Label text="Rappel (Recall / TPR)" style="-fx-text-fill: #aaaaaa; -fx-font-size: 12;"/>
+                <Label fx:id="lblRecall" text="0.00%" style="-fx-text-fill: #00ff88; -fx-font-size: 24; -fx-font-weight: bold;"/>
+            </VBox>
+            <VBox spacing="10" HBox.hgrow="ALWAYS" style="-fx-background-color: #1e1e1e; -fx-padding: 15; -fx-background-radius: 10; -fx-border-color: #333333; -fx-border-radius: 10;">
+                <Label text="Rejet Correct (TNR)" style="-fx-text-fill: #aaaaaa; -fx-font-size: 12;"/>
+                <Label fx:id="lblTNR" text="0.00%" style="-fx-text-fill: #bb86fc; -fx-font-size: 24; -fx-font-weight: bold;"/>
+            </VBox>
+            <VBox spacing="10" HBox.hgrow="ALWAYS" style="-fx-background-color: #1e1e1e; -fx-padding: 15; -fx-background-radius: 10; -fx-border-color: #333333; -fx-border-radius: 10;">
+                <Label text="Précision" style="-fx-text-fill: #aaaaaa; -fx-font-size: 12;"/>
+                <Label fx:id="lblPrecision" text="0.00%" style="-fx-text-fill: #cf6679; -fx-font-size: 24; -fx-font-weight: bold;"/>
+            </VBox>
+        </HBox>
+    </VBox>
+
+    <!-- Message d'indexation (Visible si en cours) -->
+    <HBox fx:id="indexingNotice" visible="false" managed="false" alignment="CENTER" spacing="10" style="-fx-background-color: #332200; -fx-padding: 10; -fx-background-radius: 5;">
+        <Label text=" Indexation de la BDD en cours... Veuillez patienter pour l'analyse All:N." style="-fx-text-fill: #ffcc00; -fx-font-weight: bold;"/>
+        <ProgressIndicator prefWidth="20" prefHeight="20" />
     </HBox>
 
-    <VBox spacing="10" VBox.vgrow="ALWAYS">
-        <!-- Table de données -->
-        <VBox spacing="10" VBox.vgrow="ALWAYS">
-            <Label text="Détails des Comparaisons" style="-fx-text-fill: #00ff88; -fx-font-size: 18; -fx-font-weight: bold;"/>
-            <TableView fx:id="tableResults" prefHeight="300" VBox.vgrow="ALWAYS" style="-fx-background-color: #1a1a1a; -fx-control-inner-background: #1a1a1a;">
+    <!-- Barre de Progression (Invisible par défaut) -->
+    <HBox fx:id="progressBox" visible="false" managed="false" alignment="CENTER_LEFT" spacing="10" style="-fx-background-color: #1a1a1a; -fx-padding: 10; -fx-background-radius: 5;">
+        <Label text="Analyse All:N en cours..." style="-fx-text-fill: #00ff88; -fx-font-weight: bold;"/>
+        <ProgressBar fx:id="progressBar" progress="0" HBox.hgrow="ALWAYS" maxWidth="Infinity" style="-fx-accent: #00ff88;"/>
+        <Label fx:id="lblProgress" text="0%" style="-fx-text-fill: white; -fx-font-weight: bold;"/>
+    </HBox>
+
+    <VBox spacing="15" VBox.vgrow="ALWAYS">
+        <!-- Table de données élargie -->
+        <VBox spacing="5" minHeight="450">
+            <Label text="Détails Scientifiques des Comparaisons" style="-fx-text-fill: #00ff88; -fx-font-size: 16; -fx-font-weight: bold;"/>
+            <TableView fx:id="tableResults" VBox.vgrow="ALWAYS" style="-fx-background-color: #1a1a1a; -fx-control-inner-background: #1a1a1a;">
                 <columns>
-                    <TableColumn fx:id="colImgA" text="Image A" prefWidth="150"/>
-                    <TableColumn fx:id="colImgB" text="Image B" prefWidth="150"/>
-                    <TableColumn fx:id="colChi2" text="Chi-2 (%)" prefWidth="100"/>
-                    <TableColumn fx:id="colEucl" text="Euclidien (%)" prefWidth="120"/>
-                    <TableColumn fx:id="colCos" text="Cosinus (%)" prefWidth="120"/>
-                    <TableColumn fx:id="colGlobal" text="Global (%)" prefWidth="100"/>
-                    <TableColumn fx:id="colDecision" text="Décision" prefWidth="120"/>
-                    <TableColumn fx:id="colStatus" text="Statut Scientifique" prefWidth="200"/>
+                    <TableColumn fx:id="colImgA" text="Image A" prefWidth="180"/>
+                    <TableColumn fx:id="colImgB" text="Image B" prefWidth="180"/>
+                    <TableColumn fx:id="colChi2" text="Chi-2 (%)" prefWidth="90"/>
+                    <TableColumn fx:id="colEucl" text="Eucl (%)" prefWidth="90"/>
+                    <TableColumn fx:id="colCos" text="Cos (%)" prefWidth="90"/>
+                    <TableColumn fx:id="colGlobal" text="Global (%)" prefWidth="90"/>
+                    <TableColumn fx:id="colDecision" text="Décision" prefWidth="100"/>
+                    <TableColumn fx:id="colStatus" text="Statut" prefWidth="200"/>
                 </columns>
             </TableView>
         </VBox>
 
-        <!-- Zone Graphique en bas avec Onglets -->
-        <HBox spacing="20" prefHeight="350">
-            <TabPane HBox.hgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE" style="-fx-background-color: #1a1a1a; -fx-background-radius: 10;">
-                <Tab text="Matrice de Confusion">
-                    <VBox spacing="10" style="-fx-padding: 10;">
-                        <Label text="Distribution des Statuts Scientifiques" style="-fx-text-fill: #00ff88; -fx-font-size: 14; -fx-font-weight: bold;"/>
-                        <BarChart fx:id="barChart" animated="false" style="-fx-background-color: transparent;" legendVisible="false">
-                            <xAxis><CategoryAxis label="Statut" side="BOTTOM" tickLabelFill="WHITE"/></xAxis>
-                            <yAxis><NumberAxis label="Nombre" side="LEFT" tickLabelFill="WHITE"/></yAxis>
+        <!-- Zone Graphique Élargie avec Légendes sur le côté -->
+        <VBox spacing="15" minHeight="700">
+            <TabPane VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE" style="-fx-background-color: #1a1a1a; -fx-background-radius: 10;">
+                <Tab text="Confusion Matrix">
+                    <VBox spacing="10" style="-fx-padding: 15;">
+                        <BarChart fx:id="barChart" animated="false" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent;" legendVisible="true" legendSide="RIGHT">
+                            <xAxis><CategoryAxis label="Scientifiques" side="BOTTOM" tickLabelFill="WHITE"/></xAxis>
+                            <yAxis><NumberAxis label="Volume" side="LEFT" tickLabelFill="WHITE"/></yAxis>
                         </BarChart>
                     </VBox>
                 </Tab>
-                <Tab text="Distribution des Scores">
-                    <VBox spacing="10" style="-fx-padding: 10;">
-                        <Label text="Séparabilité : Authentiques vs Imposteurs" style="-fx-text-fill: #00ff88; -fx-font-size: 14; -fx-font-weight: bold;"/>
-                        <LineChart fx:id="chartDistribution" animated="false" style="-fx-background-color: transparent;">
-                            <xAxis><NumberAxis label="Score Global (%)" side="BOTTOM" tickLabelFill="WHITE" lowerBound="0" upperBound="100" autoRanging="false"/></xAxis>
+                <Tab text="Separability (Distribution)">
+                    <VBox spacing="10" style="-fx-padding: 15;">
+                        <LineChart fx:id="chartDistribution" animated="false" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent;" legendSide="RIGHT">
+                            <xAxis><NumberAxis label="Score (%)" side="BOTTOM" tickLabelFill="WHITE" lowerBound="0" upperBound="100" autoRanging="false"/></xAxis>
                             <yAxis><NumberAxis label="Fréquence" side="LEFT" tickLabelFill="WHITE"/></yAxis>
                         </LineChart>
                     </VBox>
                 </Tab>
-                <Tab text="Courbe ROC / DET">
-                    <VBox spacing="10" style="-fx-padding: 10;">
-                        <Label text="Performance Globale (FAR vs FRR)" style="-fx-text-fill: #00ff88; -fx-font-size: 14; -fx-font-weight: bold;"/>
-                        <LineChart fx:id="chartROC" animated="false" style="-fx-background-color: transparent;">
-                            <xAxis><NumberAxis label="FAR (Fausse Acceptation %)" side="BOTTOM" tickLabelFill="WHITE" lowerBound="0" upperBound="10" autoRanging="false"/></xAxis>
-                            <yAxis><NumberAxis label="FRR (Faux Rejet %)" side="LEFT" tickLabelFill="WHITE" lowerBound="0" upperBound="10" autoRanging="false"/></yAxis>
+                <Tab text="Precision (ROC Curve)">
+                    <VBox spacing="10" style="-fx-padding: 15;">
+                        <LineChart fx:id="chartROC" animated="false" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent;" legendSide="RIGHT">
+                            <xAxis><NumberAxis label="FAR (%)" side="BOTTOM" tickLabelFill="WHITE" lowerBound="0" upperBound="100" autoRanging="true"/></xAxis>
+                            <yAxis><NumberAxis label="FRR (%)" side="LEFT" tickLabelFill="WHITE" lowerBound="0" upperBound="100" autoRanging="true"/></yAxis>
                         </LineChart>
                     </VBox>
                 </Tab>
             </TabPane>
-            
-            <VBox spacing="10" prefWidth="250" alignment="CENTER_LEFT" style="-fx-background-color: #1a1a1a; -fx-padding: 20; -fx-background-radius: 10; -fx-border-color: #333333; -fx-border-radius: 10;">
-                <Label text="Légende Scientifique" style="-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14;"/>
-                <Separator style="-fx-background-color: #444444;"/>
-                <Label text="VP : Vrai Positif (Succès)" style="-fx-text-fill: #00ff88; -fx-font-size: 12;"/>
-                <Label text="VN : Vrai Négatif (Succès)" style="-fx-text-fill: #aaaaaa; -fx-font-size: 12;"/>
-                <Label text="FP : Faux Positif (Fausse Alarme)" style="-fx-text-fill: #ff4e4e; -fx-font-size: 12;"/>
-                <Label text="FN : Faux Négatif (Oubli)" style="-fx-text-fill: #ff9900; -fx-font-size: 12;"/>
-                
-                <Region VBox.vgrow="ALWAYS" />
-                <Label text="Note : La courbe ROC montre l'équilibre Sécurité vs Confort." style="-fx-text-fill: #777777; -fx-font-size: 10;" wrapText="true"/>
-            </VBox>
-        </HBox>
+        </VBox>
     </VBox>
 </VBox>

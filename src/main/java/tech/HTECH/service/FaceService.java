@@ -12,7 +12,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class FaceService {
     // Cache statique pour éviter de recharger la BDD à chaque changement de vue
     private static final Map<String, double[]> databaseFeatures = new ConcurrentHashMap<>();
-    private static boolean isLoaded = false;
+    private static volatile boolean isLoaded = false;
+    private static volatile boolean indexing = false;
+
+    public static boolean isIndexing() {
+        return indexing;
+    }
 
     public FaceService() {
         if (!isLoaded) {
@@ -21,14 +26,14 @@ public class FaceService {
     }
 
     private synchronized void loadDatabase() {
-        if (isLoaded)
-            return;
-        reloadDatabase();
-        isLoaded = true;
+        if (isLoaded || indexing) return;
+        new Thread(this::reloadDatabase).start();
     }
 
     public synchronized void reloadDatabase() {
-        System.out.println("Indexation de la base de données (src/main/bdd)...");
+        if (indexing) return;
+        indexing = true;
+        System.out.println("Indexation de la base de données (src/main/bdd) en arrière-plan...");
         databaseFeatures.clear();
         File bddDir = new File("src/main/bdd");
         if (bddDir.exists() && bddDir.isDirectory()) {
@@ -39,6 +44,8 @@ public class FaceService {
                 }
             }
         }
+        indexing = false;
+        isLoaded = true;
         System.out.println("Indexation terminée. " + databaseFeatures.size() + " visages chargés.");
     }
 
@@ -61,29 +68,38 @@ public class FaceService {
         }
     }
 
+    public Map<String, double[]> getDatabaseFeatures() {
+        return databaseFeatures;
+    }
     public void removeFile(String fileName) {
         databaseFeatures.remove(fileName);
         System.out.println("Supprimé du cache: " + fileName);
     }
 
     public ComparisonResult compareFaces(Mat face1, Mat face2) {
-        ImageProcessor ip1 = Pretraitement.pt(OpenCVUtils.matToImageProcessor(face1));
-        ImageProcessor ip2 = Pretraitement.pt(OpenCVUtils.matToImageProcessor(face2));
+        double[] N1 = extractFeatures(face1);
+        double[] N2 = extractFeatures(face2);
+        return compareFeatures(N1, N2);
+    }
 
-        double[] features1 = Fusion.fus(Histogram.histoGrid(ip1, 8, 8),
-                LBP.histogramLBPGrid(LBP.LBP2D(ip1), 8, 8));
-        double[] features2 = Fusion.fus(Histogram.histoGrid(ip2, 8, 8),
-                LBP.histogramLBPGrid(LBP.LBP2D(ip2), 8, 8));
+    public double[] extractFeatures(Mat face) {
+        if (face == null) return null;
+        ImageProcessor ip = Pretraitement.pt(OpenCVUtils.matToImageProcessor(face));
+        double[] h = Histogram.histoGrid(ip, 8, 8);
+        double[] lbp = LBP.histogramLBPGrid(LBP.LBP2D(ip), 8, 8);
+        double[] fusion = Fusion.fus(h, lbp);
+        return NormalizeVector.normalize(fusion);
+    }
 
-        double[] N1 = NormalizeVector.normalize(features1);
-        double[] N2 = NormalizeVector.normalize(features2);
+    public ComparisonResult compareFeatures(double[] N1, double[] N2) {
+        if (N1 == null || N2 == null) return null;
 
         double distChi2 = Comparaison.distanceKhiCarre(N1, N2);
         double cos = Comparaison.similitudeCosinus(N1, N2);
         double distEucl = Comparaison.distanceEuclidienne(N1, N2);
 
         double scoreTexture = Compatibilite.CalculCompatibilite(distChi2);
-        double scoreEucl = Math.max(0.0, (1.0 - (distEucl / 0.035)) * 100.0);
+        double scoreEucl = Math.max(0.0, (1.0 - (distEucl / 0.065)) * 100.0);
 
         // Poids rééquilibrés : 40% Texture (Chi2), 40% Global (Cosine), 20% Géométrie (Eucl)
         double globalScore = (scoreTexture * 0.4) + (cos * 40.0) + (scoreEucl * 0.2);
@@ -110,7 +126,7 @@ public class FaceService {
 
         String bestMatchFile = null;
         double bestScore = 0.0;
-        double threshold = 60.0; // Seuil de 60% comme demandé
+        double threshold = 61.5; // Seuil recalibré à 61.5% (Recalib 6.0)
 
         for (Map.Entry<String, double[]> entry : databaseFeatures.entrySet()) {
             double distChi2 = Comparaison.distanceKhiCarre(features, entry.getValue());
@@ -119,7 +135,7 @@ public class FaceService {
 
             // Poids rééquilibrés : 40% Texture (Chi2), 40% Global (Cosine), 20% Géométrie (Eucl)
             double score = (Compatibilite.CalculCompatibilite(distChi2) * 0.4) + (cosSim * 40.0)
-                    + (Math.max(0.0, (1.0 - (distEucl / 0.035)) * 100.0) * 0.2);
+                    + (Math.max(0.0, (1.0 - (distEucl / 0.065)) * 100.0) * 0.2);
 
             if (score > bestScore) {
                 bestScore = score;
@@ -145,7 +161,7 @@ public class FaceService {
             double beu = Comparaison.distanceEuclidienne(features, bestFeatures);
 
             result.setScoreChi2(Compatibilite.CalculCompatibilite(bc2));
-            result.setScoreEuclidien(Math.max(0.0, (1.0 - (beu / 0.035)) * 100.0));
+            result.setScoreEuclidien(Math.max(0.0, (1.0 - (beu / 0.065)) * 100.0));
             result.setScoreCosinus(bcs * 100.0);
             result.setMatch(Decision.dec(bc2, bcs, beu));
         }

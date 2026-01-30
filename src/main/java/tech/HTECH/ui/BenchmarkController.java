@@ -8,11 +8,16 @@ import javafx.scene.chart.BarChart;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.FileChooser;
 import tech.HTECH.service.BenchmarkService;
 import tech.HTECH.service.CSVExporter;
 import tech.HTECH.service.HistoryService;
+import tech.HTECH.service.FaceService;
+import javafx.animation.Timeline;
+import javafx.animation.KeyFrame;
+import javafx.util.Duration;
 
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
@@ -25,7 +30,7 @@ import java.util.stream.Collectors;
 
 public class BenchmarkController {
 
-    @FXML private Label lblTotal, lblFAR, lblFRR;
+    @FXML private Label lblTotal, lblFAR, lblFRR, lblRecall, lblTNR, lblPrecision, lblF1;
     @FXML private TableView<BenchmarkService.BenchmarkResult> tableResults;
     @FXML private TableColumn<BenchmarkService.BenchmarkResult, String> colImgA, colImgB, colDecision, colStatus;
     @FXML private TableColumn<BenchmarkService.BenchmarkResult, Double> colChi2, colEucl, colCos, colGlobal;
@@ -33,10 +38,12 @@ public class BenchmarkController {
     @FXML private TextField txtFilter;
     @FXML private LineChart<Number, Number> chartDistribution;
     @FXML private LineChart<Number, Number> chartROC;
+    @FXML private Button btnRunBenchmark, btnRunFullBenchmark;
 
     private final BenchmarkService benchmarkService = new BenchmarkService();
     private final ObservableList<BenchmarkService.BenchmarkResult> resultList = FXCollections.observableArrayList();
     private FilteredList<BenchmarkService.BenchmarkResult> filteredResults;
+    private Timeline indexingCheck;
 
     @FXML
     public void initialize() {
@@ -86,8 +93,18 @@ public class BenchmarkController {
                 }
             }
         });
-    }
 
+        // Check indexing status every second
+        indexingCheck = new javafx.animation.Timeline(new javafx.animation.KeyFrame(javafx.util.Duration.seconds(1), e -> {
+            boolean isIndexing = tech.HTECH.service.FaceService.isIndexing();
+            indexingNotice.setVisible(isIndexing);
+            indexingNotice.setManaged(isIndexing);
+            btnRunBenchmark.setDisable(isIndexing);
+            btnRunFullBenchmark.setDisable(isIndexing);
+        }));
+        indexingCheck.setCycleCount(javafx.animation.Animation.INDEFINITE);
+        indexingCheck.play();
+    }
     @FXML
     public void handleRunBenchmark(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
@@ -133,19 +150,56 @@ public class BenchmarkController {
         }
     }
 
+    @FXML private HBox progressBox;
+    @FXML private ProgressBar progressBar;
+    @FXML private Label lblProgress;
+    @FXML private HBox indexingNotice;
+
     @FXML
     public void handleRunFullBenchmark(ActionEvent event) {
-        List<BenchmarkService.BenchmarkResult> results = benchmarkService.runFullAnalysis();
-        if (results.isEmpty()) {
-            new Alert(Alert.AlertType.WARNING, "Aucune image trouvée dans la BDD.").show();
-            return;
-        }
+        progressBox.setVisible(true);
+        progressBox.setManaged(true);
+        progressBar.setProgress(0);
+        lblProgress.setText("0%");
 
-        resultList.setAll(results);
-        updateStats(results);
-        updateChart(results);
-        updateHistogram(results);
-        updateROC(results);
+        javafx.concurrent.Task<List<BenchmarkService.BenchmarkResult>> task = new javafx.concurrent.Task<>() {
+            @Override
+            protected List<BenchmarkService.BenchmarkResult> call() {
+                return benchmarkService.runFullAnalysis((completed, total) -> {
+                    updateProgress(completed, total);
+                    javafx.application.Platform.runLater(() -> {
+                        double p = (double) completed / total;
+                        progressBar.setProgress(p);
+                        lblProgress.setText(String.format("%.0f%%", p * 100));
+                    });
+                });
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            List<BenchmarkService.BenchmarkResult> results = task.getValue();
+            progressBox.setVisible(false);
+            progressBox.setManaged(false);
+            
+            if (results.isEmpty()) {
+                new Alert(Alert.AlertType.WARNING, "Aucune image trouvée dans la BDD.").show();
+                return;
+            }
+
+            resultList.setAll(results);
+            updateStats(results);
+            updateChart(results);
+            updateHistogram(results);
+            updateROC(results);
+        });
+
+        task.setOnFailed(e -> {
+            progressBox.setVisible(false);
+            progressBox.setManaged(false);
+            new Alert(Alert.AlertType.ERROR, "Erreur lors de l'analyse : " + task.getException().getMessage()).show();
+        });
+
+        new Thread(task).start();
     }
 
     private void updateStats(List<BenchmarkService.BenchmarkResult> results) {
@@ -157,12 +211,25 @@ public class BenchmarkController {
         long totalImpostors = results.stream().filter(r -> r.getStatus().startsWith("VN") || r.getStatus().startsWith("FP")).count();
         long totalGenuines = results.stream().filter(r -> r.getStatus().startsWith("VP") || r.getStatus().startsWith("FN")).count();
 
+        long vp = totalGenuines - fn;
+        long vn = totalImpostors - fp;
+
         double far = totalImpostors > 0 ? (double) fp / totalImpostors * 100 : 0;
         double frr = totalGenuines > 0 ? (double) fn / totalGenuines * 100 : 0;
+        
+        double recall = totalGenuines > 0 ? (double) vp / totalGenuines * 100 : 0;
+        double tnr = totalImpostors > 0 ? (double) vn / totalImpostors * 100 : 0;
+        double precision = (vp + fp) > 0 ? (double) vp / (vp + fp) * 100 : 0;
+        
+        double f1 = (precision + recall) > 0 ? 2 * (precision * recall) / (precision + recall) / 100 : 0;
 
         lblTotal.setText(String.valueOf(total));
         lblFAR.setText(String.format("%.2f%%", far));
         lblFRR.setText(String.format("%.2f%%", frr));
+        lblRecall.setText(String.format("%.2f%%", recall));
+        lblTNR.setText(String.format("%.2f%%", tnr));
+        lblPrecision.setText(String.format("%.2f%%", precision));
+        lblF1.setText(String.format("%.3f", f1));
     }
 
     private void updateChart(List<BenchmarkService.BenchmarkResult> results) {

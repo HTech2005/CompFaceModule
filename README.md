@@ -1,142 +1,98 @@
-# FaceModule - Logiciel de Reconnaissance et Comparaison Faciale
+# Face Comparison Module (HTECH 2005)
 
-Ce projet est une application desktop JavaFX utilisant OpenCV et des techniques avancées de Computer Vision pour la reconnaissance faciale.
+Logiciel de reconnaissance faciale haute fidélité utilisant la triple fusion d'expertises (Texture, Structure, Géométrie).
 
-## 🚀 Comment lancer le projet
+---
 
-1.  **Prérequis** : Java 17+ et Maven installés.
-2.  **Configuration** : Placez les images de référence (.jpg/.png) dans le dossier `src/main/bdd`. Le nom du fichier sera utilisé comme nom de la personne.
+## 🚀 Guide Rapide de Lancement
+
+1.  **Prérequis** : Java 17+ et Maven.
+2.  **Base de Données** : Placez vos photos de référence dans `src/main/bdd`. Nommez les fichiers par l'identité de la personne (ex: `Elon_Musk_01.jpg`).
 3.  **Lancement** :
     ```bash
     mvn javafx:run
     ```
-    _Note : Le mode Temps Réel nécessite une caméra active._
 
 ---
 
-## 🔬 Fonctionnement Technique Approfondi
-
-Le système s'appuie sur une extraction locale de caractéristiques et une triple expertise mathématique.
+## 🛠️ Manuel d'Utilisation Étape par Étape
 
 ### 1. CDV : Comparaison de Visages (Mode 1:1)
 
-Permet de vérifier si deux visages sont identiques.
+_Vérifiez si deux photos appartiennent à la même personne._
 
-**Étapes du processus :**
-
-- **Détection** : Utilise `FaceDetection.java`. L'image est passée en gris, filtrée par CLAHE (Contrast Limited Adaptive Histogram Equalization) pour l'éclairage, puis détectée via Haar Cascade. Un recadrage (crop) de 15% est appliqué.
-- **Prétraitement** : Dans `Pretraitement.java`.
-  - Redimensionnement : Matrice **128x128**.
-  - Filtre Médian + Flou Gaussien (sigma=0.8) pour le bruit.
-  - CLAHE final pour accentuer les traits.
-- **Extraction** : Utilise `Histogram.java` et `LBP.java`. Le visage est divisé en une **Grille 8x8** (64 cellules de 16x16 pixels).
-- **Vecteur de Caractéristiques** : Chaque cellule génère un histogramme de 256 valeurs. Concaténation de 64 cellules = Vecteur de **16 384** valeurs.
-- **Score Global** : Calculé dans `FaceService.java` ou `Decision.java`.
+1. Sélectionnez l'**Image 1** (Cible).
+2. Sélectionnez l'**Image 2** (Comparaison).
+3. Le système affiche instantanément les scores détaillés des experts.
+4. **Interprétation** : Si le score global est vert (> 61.5%), les visages sont considérés comme identiques.
 
 ### 2. TR : Reconnaissance Temps Réel (Mode 1:N)
 
-Identifie une personne en direct via webcam.
+_Identification automatique via Webcam._
 
-**Étapes du processus :**
+1. Activez votre caméra.
+2. Placez votre visage dans le **cadre vert** au centre.
+3. Le système scanne la base de données en continu.
+4. **Validation** :
+   - **Accès Immédiat** : Pour les scores > 61.5%.
+   - **Stabilité (5s)** : Pour les scores entre 55% et 61.5%. Restez immobile 5 secondes pour valider.
 
-- **Cadrage** : Un cadre guide (vert) force l'utilisateur à se centrer.
-- **Boucle d'Analyse** : Le flux vidéo est traité en continu via `RecognitionController.java`.
-- **Recherche** : Chaque visage détecté est comparé à TOUT le cache de la base de données (`FaceService.java`).
-- **Logique de Verdict** :
-  - **Validation Immédiate** : Score > 60%.
-  - **Validation par Stabilité** : Si le score est entre 50% et 60%, le système attend **5 secondes** de stabilité sur la même identité avant de valider l'accès.
-- **Pondération des Scores (TR)** :
-  - 40% Texture (Chi-Carré)
-  - 40% Structure (Cosinus)
-  - 20% Géométrie (Euclidiènne)
+### 3. CV : Analyse Biométrique
 
-### 3. CV : Analyse Visuelle (Module Biométrique)
+_Analyse des traits spécifiques du visage._
 
-Analyse les traits spécifiques du visage dans `AnalysisController.java` et `FaceAnalyzer.java`.
+1. Chargez une image.
+2. Cliquez sur **Analyser**.
+3. Observez le dessin des composants (yeux, nez, bouche) et les mesures précises en pixels affichées dans le panneau latéral.
 
-**Étapes du processus :**
+### 4. LAB : Laboratoire de Tests Scientifiques (Benchmark)
 
-- Détection des composants (Haar Cascades spécifiques).
-- Calcul des dimensions et distances en pixels (px) :
-  - Distance Inter-oculaire (Yeux).
-  - Largeur du nez.
-  - Largeur de la bouche.
-- Visualisation : Dessin de boîtes englobantes colorées sur l'interface.
+_Évaluez les performances globales de l'algorithme._
+
+1. Cliquez sur **Analyse All:N** pour comparer chaque image de la base avec toutes les autres.
+2. Observez les indicateurs de performance se mettre à jour en direct.
+3. Exportez les résultats en **CSV** pour un audit externe.
 
 ---
 
-## 📐 Formules Mathématiques & Matrices
+## 🔬 Expertise Scientifique & Métriques
 
-Le système utilise trois "experts" pour une décision robuste. Les calculs sont effectués dans `Comparaison.java`.
+Le système utilise la **Recalibration 6.0**, équilibrant sécurité et confort.
 
-### A. Distance Chi-Carré ($\chi^2$) - Expert Texture
+### Définition des Métriques du Dashboard
 
-Utilisée pour comparer les histogrammes LBP (Local Binary Patterns).
+| Métrique                        | Utilité Scientifique  | Ce qu'elle indique                                        |
+| :------------------------------ | :-------------------- | :-------------------------------------------------------- |
+| **FAR (False Acceptance Rate)** | Sécurité              | Risque qu'un étranger soit accepté par erreur.            |
+| **FRR (False Rejection Rate)**  | Confort               | Risque qu'une personne autorisée soit refusée.            |
+| **Recall (Rappel)**             | Capacité de détection | % de visages connus que le système a réussi à trouver.    |
+| **TNR (Rejet Correct)**         | Spécificité           | Capacité du système à ne pas se tromper sur les inconnus. |
+| **Précision**                   | Fiabilité du Verdict  | Probabilité que si le système dit "MATCH", ce soit vrai.  |
+| **F1-Score**                    | Score Global          | La moyenne harmonique qui résume la performance totale.   |
 
-- **Formule** : $\chi^2(A,B) = \sum \frac{(A_i - B_i)^2}{A_i + B_i}$
-- **Signification** : Mesure la divergence entre les répartitions de texture fine.
-- **Fichier** : `Comparaison.distanceKhiCarre`
+### Que déduire des Graphiques ?
 
-### B. Similitude Cosinus ($Cos$) - Expert Structure
-
-Mesure l'angle entre deux vecteurs.
-
-- **Formule** : $Cos(\theta) = \frac{A \cdot B}{\|A\| \|B\|}$
-- **Signification** : Indépendant de la luminosité brute. Mesure la corrélation structurelle des traits.
-- **Fichier** : `Comparaison.similitudeCosinus`
-
-### C. Distance Euclidienne ($d$) - Expert Géométrie
-
-Distance géométrique directe par la méthode des moindres carrés.
-
-- **Formule** : $d(A,B) = \sqrt{\sum (A_i - B_i)^2}$
-- **Signification** : Écart global entre les signatures.
-- **Fichier** : `Comparaison.distanceEuclidienne`
+- **Confusion Matrix (BarChart)** : Permet de voir visuellement le volume de VP (Vrais Positifs) par rapport aux erreurs (FP/FN).
+- **Separability (Distribution)** : Un bon système montre deux "cloches" bien séparées : une pour les imposteurs (bas scores) et une pour les authentiques (hauts scores). Plus elles se chevauchent, plus il y a d'erreurs.
+- **ROC Curve (FAR vs FRR)** : La courbe idéale doit "coller" en bas à gauche de l'axe. C'est le graphique de référence pour comparer deux versions de l'IA.
 
 ---
 
-## 🛠️ Spécifications Techniques Résumées
+## ⚙️ Détails de la Recalibration 6.0 (Logic)
 
-| Paramètre        | Valeur           | Fichier Source               |
-| :--------------- | :--------------- | :--------------------------- |
-| Taille Image     | 128 x 128        | `Pretraitement.java`         |
-| Division Grille  | 8 x 8 (64 blocs) | `Histogram.java`             |
-| Taille Vecteur   | 16 384 valeurs   | `Fusion.java`                |
-| Seuil Validation | 60%              | `Decision.java`              |
-| Stabilité TR     | 5 secondes       | `RecognitionController.java` |
+Le verdict final est une fusion pondérée de 3 mesures :
+
+1.  **Texture (40%)** : Utilise le **LBP (Local Binary Patterns)** sur une grille 8x8. Très précis pour les détails fins.
+2.  **Structure (40%)** : Utilise la **Similitude Cosinus**. Très robuste aux changements de lunettes et de lumière.
+3.  **Géométrie (20%)** : Utilise la **Distance Euclidienne** (Diviseur : 0.065). Mesure l'écart global des caractéristiques.
+
+**Seuil de Décision Final : 61.5%**
 
 ---
 
-## 📊 Benchmarking Scientifique & Export Excel
+## 📁 Nettoyage du Projet
 
-Le module de tests scientifiques permet d'évaluer la fiabilité du système en calculant les taux de **FAR** (False Acceptance Rate) et **FRR** (False Rejection Rate).
-
-### Comment effectuer un test ?
-
-1. Allez dans l'onglet **Statistiques**.
-2. Cliquez sur **Lancer Analyse & Export**.
-3. Choisissez une image "Cible" (ex: `Ashley_face.jpeg`).
-4. Le système compare cette image à toute la base et vous demande où enregistrer le fichier `.csv`.
-
-### Analyse des résultats
-
-- **Fichier CSV** : Ouvrez-le avec Excel. Utilisez le séparateur `;`.
-- **Statuts Scientifiques** :
-  - **VP** : Vrai Positif (Match correct).
-  - **VN** : Vrai Négatif (Rejet correct).
-  - **FP** : Faux Positif (Imposteur accepté).
-  - **FN** : Faux Négatif (Même personne rejetée).
-
-### Génération de graphiques (Optionnel)
-
-Si vous avez Python installé, vous pouvez générer des graphiques de performance :
-
-```bash
-pip install pandas matplotlib seaborn
-python analyze_benchmark.py "votre_resultat.csv"
-```
-
-Cela générera un histogramme de distribution des scores et calculera les taux d'erreur globaux.
+Pour garantir la stabilité, seuls les fichiers sources (`src/`), la configuration Maven (`pom.xml`) et cette documentation sont conservés. Tous les fichiers de logs (`.log`), scripts de tests temporaires (`.py`) et résultats intermédiaires ont été supprimés.
 
 ---
 

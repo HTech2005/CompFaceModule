@@ -17,14 +17,14 @@ public class Decision {
         double scoreCos = cosineSim * 100.0;
 
         // Avec 128 blocs (8x8 Hist + 8x8 LBP), la distance max est ajustée
-        double scoreEucl = Math.max(0.0, (1.0 - (distEucl / 0.035)) * 100.0);
+        double scoreEucl = Math.max(0.0, (1.0 - (distEucl / 0.065)) * 100.0);
 
         // Score Global Fusionné (Rééquilibré pour les lunettes : moins de texture, plus de global)
         // Texture (40%) + Cosinus (40%) + Euclidien (20%)
         double globalScore = (scoreChi2 * 0.4) + (scoreCos * 0.4) + (scoreEucl * 0.2);
 
-        // Seuil de 60% comme demandé
-        double seuilGlobal = 60.0;
+        // Seuil ajusté pour Recalibration 6.0
+        double seuilGlobal = 61.5;
 
         return globalScore >= seuilGlobal;
     }

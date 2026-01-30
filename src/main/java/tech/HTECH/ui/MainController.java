@@ -13,7 +13,7 @@ public class MainController {
     @FXML
     private StackPane contentArea;
     @FXML
-    private Button btnHome, btnCDV, btnTR, btnCV, btnDashboard, btnStats, btnBenchmark;
+    private Button btnHome, btnCDV, btnTR, btnCV, btnDashboard, btnBenchmark;
 
     @FXML
     public void initialize() {
@@ -51,12 +51,6 @@ public class MainController {
     }
 
     @FXML
-    private void showStats() {
-        loadView("/fxml/statistics.fxml");
-        setActiveButton(btnStats);
-    }
-
-    @FXML
     private void showBenchmark() {
         loadView("/fxml/benchmark.fxml");
         setActiveButton(btnBenchmark);
@@ -78,7 +72,6 @@ public class MainController {
         btnTR.setStyle("-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;");
         btnCV.setStyle("-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;");
         btnDashboard.setStyle("-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;");
-        btnStats.setStyle("-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;");
         if (btnBenchmark != null) {
             btnBenchmark.setStyle("-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;");
         }

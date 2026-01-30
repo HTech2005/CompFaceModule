@@ -42,67 +42,69 @@ public class BenchmarkService {
         Mat faceA = FaceDetection.detectFace(targetFile.getAbsolutePath());
         if (faceA == null) return results;
 
-        File bddDir = new File("src/main/bdd");
-        File[] files = bddDir.listFiles((dir, name) -> name.toLowerCase().matches(".*\\.(jpg|jpeg|png)$"));
+        double[] featuresA = faceService.extractFeatures(faceA);
+        Map<String, double[]> featureMap = faceService.getDatabaseFeatures();
 
-        if (files != null) {
-            for (File fileB : files) {
-                Mat faceB = FaceDetection.detectFace(fileB.getAbsolutePath());
-                if (faceB == null) continue;
+        for (Map.Entry<String, double[]> entry : featureMap.entrySet()) {
+            String nameB = entry.getKey();
+            
+            // Éviter de se comparer avec soi-même
+            if (targetFile.getName().equalsIgnoreCase(nameB)) continue;
 
-                FaceService.ComparisonResult res = faceService.compareFaces(faceA, faceB);
-                
-                BenchmarkResult br = new BenchmarkResult();
-                br.imageA = targetFile.getName();
-                br.imageB = fileB.getName();
-                br.chi2 = res.getScoreChi2();
-                br.eucl = res.getScoreEuclidien();
-                br.cos = res.getScoreCosinus();
-                br.global = res.getScoreGlobal();
-                br.decision = res.isMatch();
-                
-                // Détermination du statut scientifique
-                boolean theoreticallySame = isTheoreticallySame(targetFile.getName(), fileB.getName());
-                
-                if (theoreticallySame && br.decision) br.status = "VP (Vrai Positif)";
-                else if (theoreticallySame && !br.decision) br.status = "FN (Faux Négatif)";
-                else if (!theoreticallySame && br.decision) br.status = "FP (Faux Positif)";
-                else br.status = "VN (Vrai Négatif)";
+            double[] featuresB = entry.getValue();
 
-                results.add(br);
-            }
+            FaceService.ComparisonResult res = faceService.compareFeatures(featuresA, featuresB);
+            if (res == null) continue;
+
+            BenchmarkResult br = new BenchmarkResult();
+            br.imageA = targetFile.getName();
+            br.imageB = nameB;
+            br.chi2 = res.getScoreChi2();
+            br.eucl = res.getScoreEuclidien();
+            br.cos = res.getScoreCosinus();
+            br.global = res.getScoreGlobal();
+            br.decision = res.isMatch();
+            
+            boolean theoreticallySame = isTheoreticallySame(targetFile.getName(), nameB);
+            
+            if (theoreticallySame && br.decision) br.status = "VP (Vrai Positif)";
+            else if (theoreticallySame && !br.decision) br.status = "FN (Faux Négatif)";
+            else if (!theoreticallySame && br.decision) br.status = "FP (Faux Positif)";
+            else br.status = "VN (Vrai Négatif)";
+
+            results.add(br);
         }
         return results;
     }
-
     public List<BenchmarkResult> runFullAnalysis() {
+        return runFullAnalysis(null);
+    }
+
+    public List<BenchmarkResult> runFullAnalysis(java.util.function.BiConsumer<Integer, Integer> progressCallback) {
         List<BenchmarkResult> results = new ArrayList<>();
-        File bddDir = new File("src/main/bdd");
-        File[] files = bddDir.listFiles((dir, name) -> name.toLowerCase().matches(".*\\.(jpg|jpeg|png)$"));
+        Map<String, double[]> featureMap = faceService.getDatabaseFeatures();
 
-        if (files == null || files.length == 0) return results;
+        if (featureMap.isEmpty()) return results;
 
-        // Pré-chargement des visages pour éviter de re-détecter N*N fois
-        Map<String, Mat> faceMap = new java.util.HashMap<>();
-        for (File file : files) {
-            Mat face = FaceDetection.detectFace(file.getAbsolutePath());
-            if (face != null) {
-                faceMap.put(file.getName(), face);
-            }
-        }
+        List<String> filenames = new ArrayList<>(featureMap.keySet());
+        int n = filenames.size();
+        int totalComparisons = n * n;
+        int completed = 0;
 
-        List<String> filenames = new ArrayList<>(faceMap.keySet());
-        for (int i = 0; i < filenames.size(); i++) {
-            for (int j = 0; j < filenames.size(); j++) {
-                // On peut décider de ne pas comparer une image avec elle-même, 
-                // mais pour un benchmark scientifique complet (vérifier le score de 100%), on le laisse souvent.
-                String nameA = filenames.get(i);
+        for (int i = 0; i < n; i++) {
+            String nameA = filenames.get(i);
+            double[] featuresA = featureMap.get(nameA);
+
+            for (int j = 0; j < n; j++) {
                 String nameB = filenames.get(j);
                 
-                Mat faceA = faceMap.get(nameA);
-                Mat faceB = faceMap.get(nameB);
+                // Éviter de se comparer avec soi-même
+                if (nameA.equalsIgnoreCase(nameB)) continue;
 
-                FaceService.ComparisonResult res = faceService.compareFaces(faceA, faceB);
+                double[] featuresB = featureMap.get(nameB);
+
+                FaceService.ComparisonResult res = faceService.compareFeatures(featuresA, featuresB);
+                if (res == null) continue;
 
                 BenchmarkResult br = new BenchmarkResult();
                 br.imageA = nameA;
@@ -121,6 +123,11 @@ public class BenchmarkService {
                 else br.status = "VN (Vrai Négatif)";
 
                 results.add(br);
+                
+                completed++;
+                if (progressCallback != null && (completed % 100 == 0 || completed == totalComparisons)) {
+                    progressCallback.accept(completed, totalComparisons);
+                }
             }
         }
         return results;
@@ -129,17 +136,22 @@ public class BenchmarkService {
     private boolean isTheoreticallySame(String name1, String name2) {
         if (name1.equalsIgnoreCase(name2)) return true;
 
-        // 1. Vérifier les groupes de similitude définis par l'utilisateur
-        if (HistoryService.getInstance().inSameGroup(name1, name2)) return true;
-        
-        // 2. Nettoyage des noms (enlever extensions, chiffres et suffixes courants)
-        String clean1 = cleanName(name1);
-        String clean2 = cleanName(name2);
-        
-        // Si l'un est contenu dans l'autre (ex: "Ashley_face" et "Ashley")
-        return clean1.contains(clean2) || clean2.contains(clean1);
+        // Extraction du préfixe "PersonneXX" (tout ce qui précède le premier underscore ou l'extension)
+        String prefix1 = extractPrefix(name1);
+        String prefix2 = extractPrefix(name2);
+
+        return prefix1.equalsIgnoreCase(prefix2) && !prefix1.isEmpty();
     }
 
+    private String extractPrefix(String name) {
+        // Enlève l'extension
+        String clean = name.split("\\.")[0];
+        // Prend la partie avant l'underscore (ex: Personne01_02 -> Personne01)
+        if (clean.contains("_")) {
+            return clean.split("_")[0];
+        }
+        return clean;
+    }
     // Changement de visibilité de inSameGroup dans HistoryService requis
 
     private String cleanName(String name) {
