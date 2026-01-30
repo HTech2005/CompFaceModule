@@ -5,6 +5,7 @@ import tech.HTECH.FaceDetection;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class BenchmarkService {
 
@@ -63,6 +64,57 @@ public class BenchmarkService {
                 // Détermination du statut scientifique
                 boolean theoreticallySame = isTheoreticallySame(targetFile.getName(), fileB.getName());
                 
+                if (theoreticallySame && br.decision) br.status = "VP (Vrai Positif)";
+                else if (theoreticallySame && !br.decision) br.status = "FN (Faux Négatif)";
+                else if (!theoreticallySame && br.decision) br.status = "FP (Faux Positif)";
+                else br.status = "VN (Vrai Négatif)";
+
+                results.add(br);
+            }
+        }
+        return results;
+    }
+
+    public List<BenchmarkResult> runFullAnalysis() {
+        List<BenchmarkResult> results = new ArrayList<>();
+        File bddDir = new File("src/main/bdd");
+        File[] files = bddDir.listFiles((dir, name) -> name.toLowerCase().matches(".*\\.(jpg|jpeg|png)$"));
+
+        if (files == null || files.length == 0) return results;
+
+        // Pré-chargement des visages pour éviter de re-détecter N*N fois
+        Map<String, Mat> faceMap = new java.util.HashMap<>();
+        for (File file : files) {
+            Mat face = FaceDetection.detectFace(file.getAbsolutePath());
+            if (face != null) {
+                faceMap.put(file.getName(), face);
+            }
+        }
+
+        List<String> filenames = new ArrayList<>(faceMap.keySet());
+        for (int i = 0; i < filenames.size(); i++) {
+            for (int j = 0; j < filenames.size(); j++) {
+                // On peut décider de ne pas comparer une image avec elle-même, 
+                // mais pour un benchmark scientifique complet (vérifier le score de 100%), on le laisse souvent.
+                String nameA = filenames.get(i);
+                String nameB = filenames.get(j);
+                
+                Mat faceA = faceMap.get(nameA);
+                Mat faceB = faceMap.get(nameB);
+
+                FaceService.ComparisonResult res = faceService.compareFaces(faceA, faceB);
+
+                BenchmarkResult br = new BenchmarkResult();
+                br.imageA = nameA;
+                br.imageB = nameB;
+                br.chi2 = res.getScoreChi2();
+                br.eucl = res.getScoreEuclidien();
+                br.cos = res.getScoreCosinus();
+                br.global = res.getScoreGlobal();
+                br.decision = res.isMatch();
+
+                boolean theoreticallySame = isTheoreticallySame(nameA, nameB);
+
                 if (theoreticallySame && br.decision) br.status = "VP (Vrai Positif)";
                 else if (theoreticallySame && !br.decision) br.status = "FN (Faux Négatif)";
                 else if (!theoreticallySame && br.decision) br.status = "FP (Faux Positif)";

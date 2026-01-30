@@ -14,6 +14,8 @@ import tech.HTECH.service.BenchmarkService;
 import tech.HTECH.service.CSVExporter;
 import tech.HTECH.service.HistoryService;
 
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,11 +30,13 @@ public class BenchmarkController {
     @FXML private TableColumn<BenchmarkService.BenchmarkResult, String> colImgA, colImgB, colDecision, colStatus;
     @FXML private TableColumn<BenchmarkService.BenchmarkResult, Double> colChi2, colEucl, colCos, colGlobal;
     @FXML private BarChart<String, Number> barChart;
+    @FXML private TextField txtFilter;
     @FXML private LineChart<Number, Number> chartDistribution;
     @FXML private LineChart<Number, Number> chartROC;
 
     private final BenchmarkService benchmarkService = new BenchmarkService();
     private final ObservableList<BenchmarkService.BenchmarkResult> resultList = FXCollections.observableArrayList();
+    private FilteredList<BenchmarkService.BenchmarkResult> filteredResults;
 
     @FXML
     public void initialize() {
@@ -45,7 +49,24 @@ public class BenchmarkController {
         colDecision.setCellValueFactory(new PropertyValueFactory<>("decision"));
         colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
 
-        tableResults.setItems(resultList);
+        // Gestion du filtrage
+        filteredResults = new FilteredList<>(resultList, p -> true);
+        txtFilter.textProperty().addListener((observable, oldValue, newValue) -> {
+            filteredResults.setPredicate(res -> {
+                if (newValue == null || newValue.isEmpty()) return true;
+                String lowerCaseFilter = newValue.toLowerCase();
+                return res.getImageA().toLowerCase().contains(lowerCaseFilter) ||
+                       res.getImageB().toLowerCase().contains(lowerCaseFilter);
+            });
+            updateStats(filteredResults);
+            updateChart(filteredResults);
+            updateHistogram(filteredResults);
+            updateROC(filteredResults);
+        });
+
+        SortedList<BenchmarkService.BenchmarkResult> sortedData = new SortedList<>(filteredResults);
+        sortedData.comparatorProperty().bind(tableResults.comparatorProperty());
+        tableResults.setItems(sortedData);
         
         // Custom styling for decision column
         colDecision.setCellFactory(column -> new TableCell<>() {
@@ -110,6 +131,21 @@ public class BenchmarkController {
                 new Alert(Alert.AlertType.ERROR, "Erreur d'export : " + e.getMessage()).show();
             }
         }
+    }
+
+    @FXML
+    public void handleRunFullBenchmark(ActionEvent event) {
+        List<BenchmarkService.BenchmarkResult> results = benchmarkService.runFullAnalysis();
+        if (results.isEmpty()) {
+            new Alert(Alert.AlertType.WARNING, "Aucune image trouvée dans la BDD.").show();
+            return;
+        }
+
+        resultList.setAll(results);
+        updateStats(results);
+        updateChart(results);
+        updateHistogram(results);
+        updateROC(results);
     }
 
     private void updateStats(List<BenchmarkService.BenchmarkResult> results) {
