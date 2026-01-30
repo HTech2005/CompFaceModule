@@ -53,27 +53,48 @@
             </TableView>
         </VBox>
 
-        <!-- Zone Graphique en bas -->
-        <HBox spacing="20" prefHeight="250">
-            <VBox spacing="10" HBox.hgrow="ALWAYS">
-                <Label text="Distribution des Statuts Scientifiques" style="-fx-text-fill: #00ff88; -fx-font-size: 18; -fx-font-weight: bold;"/>
-                <BarChart fx:id="barChart" style="-fx-background-color: #1a1a1a; -fx-background-radius: 10; -fx-padding: 5;" legendVisible="false">
-                    <xAxis>
-                        <CategoryAxis label="Statut Scientifique" side="BOTTOM" tickLabelFill="WHITE"/>
-                    </xAxis>
-                    <yAxis>
-                        <NumberAxis label="Nombre d'occurrences" side="LEFT" tickLabelFill="WHITE"/>
-                    </yAxis>
-                </BarChart>
-            </VBox>
+        <!-- Zone Graphique en bas avec Onglets -->
+        <HBox spacing="20" prefHeight="350">
+            <TabPane HBox.hgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE" style="-fx-background-color: #1a1a1a; -fx-background-radius: 10;">
+                <Tab text="Matrice de Confusion">
+                    <VBox spacing="10" style="-fx-padding: 10;">
+                        <Label text="Distribution des Statuts Scientifiques" style="-fx-text-fill: #00ff88; -fx-font-size: 14; -fx-font-weight: bold;"/>
+                        <BarChart fx:id="barChart" animated="false" style="-fx-background-color: transparent;" legendVisible="false">
+                            <xAxis><CategoryAxis label="Statut" side="BOTTOM" tickLabelFill="WHITE"/></xAxis>
+                            <yAxis><NumberAxis label="Nombre" side="LEFT" tickLabelFill="WHITE"/></yAxis>
+                        </BarChart>
+                    </VBox>
+                </Tab>
+                <Tab text="Distribution des Scores">
+                    <VBox spacing="10" style="-fx-padding: 10;">
+                        <Label text="Séparabilité : Authentiques vs Imposteurs" style="-fx-text-fill: #00ff88; -fx-font-size: 14; -fx-font-weight: bold;"/>
+                        <LineChart fx:id="chartDistribution" animated="false" style="-fx-background-color: transparent;">
+                            <xAxis><NumberAxis label="Score Global (%)" side="BOTTOM" tickLabelFill="WHITE" lowerBound="0" upperBound="100" autoRanging="false"/></xAxis>
+                            <yAxis><NumberAxis label="Fréquence" side="LEFT" tickLabelFill="WHITE"/></yAxis>
+                        </LineChart>
+                    </VBox>
+                </Tab>
+                <Tab text="Courbe ROC / DET">
+                    <VBox spacing="10" style="-fx-padding: 10;">
+                        <Label text="Performance Globale (FAR vs FRR)" style="-fx-text-fill: #00ff88; -fx-font-size: 14; -fx-font-weight: bold;"/>
+                        <LineChart fx:id="chartROC" animated="false" style="-fx-background-color: transparent;">
+                            <xAxis><NumberAxis label="FAR (Fausse Acceptation %)" side="BOTTOM" tickLabelFill="WHITE" lowerBound="0" upperBound="10" autoRanging="false"/></xAxis>
+                            <yAxis><NumberAxis label="FRR (Faux Rejet %)" side="LEFT" tickLabelFill="WHITE" lowerBound="0" upperBound="10" autoRanging="false"/></yAxis>
+                        </LineChart>
+                    </VBox>
+                </Tab>
+            </TabPane>
             
             <VBox spacing="10" prefWidth="250" alignment="CENTER_LEFT" style="-fx-background-color: #1a1a1a; -fx-padding: 20; -fx-background-radius: 10; -fx-border-color: #333333; -fx-border-radius: 10;">
                 <Label text="Légende Scientifique" style="-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14;"/>
                 <Separator style="-fx-background-color: #444444;"/>
-                <Label text="VP : Vrai Positif (Match correct)" style="-fx-text-fill: #00ff88; -fx-font-size: 12;"/>
-                <Label text="VN : Vrai Négatif (Rejet correct)" style="-fx-text-fill: #aaaaaa; -fx-font-size: 12;"/>
+                <Label text="VP : Vrai Positif (Succès)" style="-fx-text-fill: #00ff88; -fx-font-size: 12;"/>
+                <Label text="VN : Vrai Négatif (Succès)" style="-fx-text-fill: #aaaaaa; -fx-font-size: 12;"/>
                 <Label text="FP : Faux Positif (Fausse Alarme)" style="-fx-text-fill: #ff4e4e; -fx-font-size: 12;"/>
                 <Label text="FN : Faux Négatif (Oubli)" style="-fx-text-fill: #ff9900; -fx-font-size: 12;"/>
+                
+                <Region VBox.vgrow="ALWAYS" />
+                <Label text="Note : La courbe ROC montre l'équilibre Sécurité vs Confort." style="-fx-text-fill: #777777; -fx-font-size: 10;" wrapText="true"/>
             </VBox>
         </HBox>
     </VBox>

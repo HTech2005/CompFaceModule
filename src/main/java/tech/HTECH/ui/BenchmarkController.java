@@ -5,6 +5,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.chart.BarChart;
+import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -14,8 +15,10 @@ import tech.HTECH.service.CSVExporter;
 import tech.HTECH.service.HistoryService;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 public class BenchmarkController {
@@ -25,6 +28,8 @@ public class BenchmarkController {
     @FXML private TableColumn<BenchmarkService.BenchmarkResult, String> colImgA, colImgB, colDecision, colStatus;
     @FXML private TableColumn<BenchmarkService.BenchmarkResult, Double> colChi2, colEucl, colCos, colGlobal;
     @FXML private BarChart<String, Number> barChart;
+    @FXML private LineChart<Number, Number> chartDistribution;
+    @FXML private LineChart<Number, Number> chartROC;
 
     private final BenchmarkService benchmarkService = new BenchmarkService();
     private final ObservableList<BenchmarkService.BenchmarkResult> resultList = FXCollections.observableArrayList();
@@ -79,6 +84,8 @@ public class BenchmarkController {
             resultList.setAll(results);
             updateStats(results);
             updateChart(results);
+            updateHistogram(results);
+            updateROC(results);
         }
     }
 
@@ -131,13 +138,69 @@ public class BenchmarkController {
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName("Statuts");
 
-        // Assurer l'ordre et le nom complet pour l'abscisse
         String[] fullStatus = {"VP (Vrai Positif)", "VN (Vrai Négatif)", "FP (Faux Positif)", "FN (Faux Négatif)"};
         for (String status : fullStatus) {
             long count = counts.getOrDefault(status, 0L);
-            series.getData().add(new XYChart.Data<>(status.split(" ")[0], count)); // Affiche juste VP, VN.. mais avec info complète au besoin
+            series.getData().add(new XYChart.Data<>(status.split(" ")[0], count));
         }
 
         barChart.getData().add(series);
+    }
+
+    private void updateHistogram(List<BenchmarkService.BenchmarkResult> results) {
+        chartDistribution.getData().clear();
+
+        XYChart.Series<Number, Number> authentics = new XYChart.Series<>();
+        authentics.setName("Authentiques (VP/FN)");
+        
+        XYChart.Series<Number, Number> impostors = new XYChart.Series<>();
+        impostors.setName("Imposteurs (VN/FP)");
+
+        // Buckets de 5%
+        Map<Integer, Long> authBuckets = new TreeMap<>();
+        Map<Integer, Long> impBuckets = new TreeMap<>();
+
+        for (BenchmarkService.BenchmarkResult r : results) {
+            int bucket = (int) (r.getGlobal() / 5) * 5;
+            boolean isGenuine = r.getStatus().startsWith("VP") || r.getStatus().startsWith("FN");
+            if (isGenuine) authBuckets.put(bucket, authBuckets.getOrDefault(bucket, 0L) + 1);
+            else impBuckets.put(bucket, impBuckets.getOrDefault(bucket, 0L) + 1);
+        }
+
+        for (int i = 0; i <= 100; i += 5) {
+            authentics.getData().add(new XYChart.Data<>(i, authBuckets.getOrDefault(i, 0L)));
+            impostors.getData().add(new XYChart.Data<>(i, impBuckets.getOrDefault(i, 0L)));
+        }
+
+        chartDistribution.getData().addAll(authentics, impostors);
+    }
+
+    private void updateROC(List<BenchmarkService.BenchmarkResult> results) {
+        chartROC.getData().clear();
+        XYChart.Series<Number, Number> series = new XYChart.Series<>();
+        series.setName("Courbe FAR vs FRR");
+
+        long totalGenuines = results.stream().filter(r -> r.getStatus().startsWith("VP") || r.getStatus().startsWith("FN")).count();
+        long totalImpostors = results.stream().filter(r -> r.getStatus().startsWith("VN") || r.getStatus().startsWith("FP")).count();
+
+        if (totalGenuines == 0 || totalImpostors == 0) return;
+
+        // Calculer FAR/FRR pour des seuils de 0 à 100
+        for (int t = 0; t <= 100; t += 2) {
+            final int threshold = t;
+            long fp = results.stream().filter(r -> !isTheoreticallySame(r) && r.getGlobal() >= threshold).count();
+            long fn = results.stream().filter(r -> isTheoreticallySame(r) && r.getGlobal() < threshold).count();
+
+            double far = (double) fp / totalImpostors * 100;
+            double frr = (double) fn / totalGenuines * 100;
+
+            series.getData().add(new XYChart.Data<>(far, frr));
+        }
+
+        chartROC.getData().add(series);
+    }
+
+    private boolean isTheoreticallySame(BenchmarkService.BenchmarkResult r) {
+        return r.getStatus().startsWith("VP") || r.getStatus().startsWith("FN");
     }
 }
