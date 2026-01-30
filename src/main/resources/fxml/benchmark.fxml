@@ -59,10 +59,10 @@
                 <Label text="Distribution des Statuts Scientifiques" style="-fx-text-fill: #00ff88; -fx-font-size: 18; -fx-font-weight: bold;"/>
                 <BarChart fx:id="barChart" style="-fx-background-color: #1a1a1a; -fx-background-radius: 10; -fx-padding: 5;" legendVisible="false">
                     <xAxis>
-                        <CategoryAxis side="BOTTOM" tickLabelFill="WHITE"/>
+                        <CategoryAxis label="Statut Scientifique" side="BOTTOM" tickLabelFill="WHITE"/>
                     </xAxis>
                     <yAxis>
-                        <NumberAxis side="LEFT" tickLabelFill="WHITE"/>
+                        <NumberAxis label="Nombre d'occurrences" side="LEFT" tickLabelFill="WHITE"/>
                     </yAxis>
                 </BarChart>
             </VBox>

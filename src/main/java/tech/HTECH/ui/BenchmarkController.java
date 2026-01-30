@@ -126,14 +126,17 @@ public class BenchmarkController {
         barChart.getData().clear();
         
         Map<String, Long> counts = results.stream()
-                .collect(Collectors.groupingBy(r -> r.getStatus().substring(0, 2), Collectors.counting()));
+                .collect(Collectors.groupingBy(BenchmarkService.BenchmarkResult::getStatus, Collectors.counting()));
 
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName("Statuts");
 
-        counts.forEach((status, count) -> {
-            series.getData().add(new XYChart.Data<>(status, count));
-        });
+        // Assurer l'ordre et le nom complet pour l'abscisse
+        String[] fullStatus = {"VP (Vrai Positif)", "VN (Vrai Négatif)", "FP (Faux Positif)", "FN (Faux Négatif)"};
+        for (String status : fullStatus) {
+            long count = counts.getOrDefault(status, 0L);
+            series.getData().add(new XYChart.Data<>(status.split(" ")[0], count)); // Affiche juste VP, VN.. mais avec info complète au besoin
+        }
 
         barChart.getData().add(series);
     }
