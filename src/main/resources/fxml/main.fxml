@@ -19,6 +19,7 @@
             <Button text="Analyse (CV)" fx:id="btnCV" onAction="#showCV" maxWidth="Infinity" style="-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;"/>
             <Button text="Dashboard" fx:id="btnDashboard" onAction="#showDashboard" maxWidth="Infinity" style="-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;"/>
             <Button text="Stats &amp; Historique" fx:id="btnStats" onAction="#showStats" maxWidth="Infinity" style="-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;"/>
+            <Button text="Tests &amp; Benchmark" fx:id="btnBenchmark" onAction="#showBenchmark" maxWidth="Infinity" style="-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;"/>
         </VBox>
     </left>
     <center>

@@ -11,18 +11,28 @@ public class BenchmarkService {
     private final FaceService faceService = new FaceService();
 
     public static class BenchmarkResult {
-        public String imageA;
-        public String imageB;
-        public double chi2;
-        public double eucl;
-        public double cos;
-        public double global;
-        public boolean decision;
-        public String status; // VP, VN, FP, FN
+        private String imageA;
+        private String imageB;
+        private double chi2;
+        private double eucl;
+        private double cos;
+        private double global;
+        private boolean decision;
+        private String status; // VP, VN, FP, FN
+
+        public String getImageA() { return imageA; }
+        public String getImageB() { return imageB; }
+        public double getChi2() { return chi2; }
+        public double getEucl() { return eucl; }
+        public double getCos() { return cos; }
+        public double getGlobal() { return global; }
+        public String getDecision() { return decision ? "MATCH" : "NO_MATCH"; }
+        public boolean isDecision() { return decision; }
+        public String getStatus() { return status; }
 
         public String toCSVRow() {
             return String.format("%s;%s;%.2f;%.2f;%.2f;%.2f;%s;%s",
-                    imageA, imageB, chi2, eucl, cos, global, decision ? "MATCH" : "NO_MATCH", status);
+                    imageA, imageB, chi2, eucl, cos, global, getDecision(), status);
         }
     }
 
