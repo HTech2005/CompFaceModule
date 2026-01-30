@@ -66,14 +66,19 @@ public class BenchmarkService {
 
     private boolean isTheoreticallySame(String name1, String name2) {
         if (name1.equalsIgnoreCase(name2)) return true;
+
+        // 1. Vérifier les groupes de similitude définis par l'utilisateur
+        if (HistoryService.getInstance().inSameGroup(name1, name2)) return true;
         
-        // Nettoyage des noms (enlever extensions, chiffres et suffixes courants)
+        // 2. Nettoyage des noms (enlever extensions, chiffres et suffixes courants)
         String clean1 = cleanName(name1);
         String clean2 = cleanName(name2);
         
         // Si l'un est contenu dans l'autre (ex: "Ashley_face" et "Ashley")
         return clean1.contains(clean2) || clean2.contains(clean1);
     }
+
+    // Changement de visibilité de inSameGroup dans HistoryService requis
 
     private String cleanName(String name) {
         return name.toLowerCase()

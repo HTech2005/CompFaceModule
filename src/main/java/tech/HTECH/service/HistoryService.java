@@ -49,7 +49,7 @@ public class HistoryService {
         }
     }
 
-    private boolean inSameGroup(String n1, String n2) {
+    public boolean inSameGroup(String n1, String n2) {
         for (List<String> group : similarityGroups) {
             boolean contains1 = false, contains2 = false;
             for (String name : group) {
