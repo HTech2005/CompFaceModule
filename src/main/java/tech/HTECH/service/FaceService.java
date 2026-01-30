@@ -85,8 +85,8 @@ public class FaceService {
         double scoreTexture = Compatibilite.CalculCompatibilite(distChi2);
         double scoreEucl = Math.max(0.0, (1.0 - (distEucl / 0.035)) * 100.0);
 
-        // Poids équilibrés pour 8x8
-        double globalScore = (scoreTexture * 0.6) + (cos * 100.0 * 0.2) + (scoreEucl * 0.2);
+        // Poids rééquilibrés : 40% Texture (Chi2), 40% Global (Cosine), 20% Géométrie (Eucl)
+        double globalScore = (scoreTexture * 0.4) + (cos * 40.0) + (scoreEucl * 0.2);
 
         ComparisonResult result = new ComparisonResult();
         result.setMatch(Decision.dec(distChi2, cos, distEucl));

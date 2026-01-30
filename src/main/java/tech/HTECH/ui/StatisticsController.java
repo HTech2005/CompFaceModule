@@ -11,11 +11,15 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import tech.HTECH.service.HistoryService;
+import tech.HTECH.service.BenchmarkService;
+import tech.HTECH.service.CSVExporter;
+import javafx.stage.FileChooser;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Optional;
 
 public class StatisticsController {
 
@@ -133,5 +137,45 @@ public class StatisticsController {
         historyService.resetStats();
         refreshUI();
         historyService.getSimilarityGroups().clear();
+    }
+
+    @FXML
+    public void handleRunBenchmark(ActionEvent event) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Choisir l'image cible pour l'analyse scientifique");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Images", "*.jpg", "*.png", "*.jpeg"));
+        File target = fileChooser.showOpenDialog(listHistory.getScene().getWindow());
+
+        if (target != null) {
+            BenchmarkService benchmarkService = new BenchmarkService();
+            List<BenchmarkService.BenchmarkResult> results = benchmarkService.runAnalysis(target);
+
+            if (results.isEmpty()) {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Aucun visage détecté ou base de données vide.");
+                alert.show();
+                return;
+            }
+
+            // Proposer de sauvegarder le CSV
+            FileChooser saveChooser = new FileChooser();
+            saveChooser.setTitle("Sauvegarder les résultats Excel (CSV)");
+            saveChooser.setInitialFileName("benchmark_result_" + target.getName().split("\\.")[0] + ".csv");
+            saveChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+            File saveFile = saveChooser.showSaveDialog(listHistory.getScene().getWindow());
+
+            if (saveFile != null) {
+                try {
+                    CSVExporter.exportBenchmark(results, saveFile);
+                    historyService.addLog("Test: Benchmark scientifique exporté (" + results.size() + " lignes)");
+                    
+                    Alert success = new Alert(Alert.AlertType.INFORMATION, "Exportation terminée avec succès !");
+                    success.show();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Alert err = new Alert(Alert.AlertType.ERROR, "Erreur lors de l'exportation: " + e.getMessage());
+                    err.show();
+                }
+            }
+        }
     }
 }

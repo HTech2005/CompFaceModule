@@ -33,6 +33,16 @@
             </VBox>
             
             <Button text="Réinitialiser les Stats" onAction="#handleReset" maxWidth="Infinity" style="-fx-background-color: #444444; -fx-text-fill: white;"/>
+
+            <Region VBox.vgrow="ALWAYS" />
+
+            <!-- Nouveau Panel Benchmark -->
+            <Label text="Benchmarking Scientifique" style="-fx-text-fill: #00ff88; -fx-font-size: 16; -fx-font-weight: bold;"/>
+            <VBox spacing="10" style="-fx-border-color: #444444; -fx-padding: 10; -fx-border-radius: 5;">
+                <Label text="Analyse 1 contre N" style="-fx-text-fill: white; -fx-font-size: 12;"/>
+                <Button text="Lancer Analyse &amp; Export" onAction="#handleRunBenchmark" maxWidth="Infinity" style="-fx-background-color: #6200ee; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                <Label text="Cette action exporte un fichier Excel détaillé." style="-fx-text-fill: #777777; -fx-font-size: 10;" wrapText="true"/>
+            </VBox>
         </VBox>
 
         <!-- Panel Gestion des Similitudes -->

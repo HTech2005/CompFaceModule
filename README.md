@@ -107,4 +107,37 @@ Distance géométrique directe par la méthode des moindres carrés.
 
 ---
 
+## 📊 Benchmarking Scientifique & Export Excel
+
+Le module de tests scientifiques permet d'évaluer la fiabilité du système en calculant les taux de **FAR** (False Acceptance Rate) et **FRR** (False Rejection Rate).
+
+### Comment effectuer un test ?
+
+1. Allez dans l'onglet **Statistiques**.
+2. Cliquez sur **Lancer Analyse & Export**.
+3. Choisissez une image "Cible" (ex: `Ashley_face.jpeg`).
+4. Le système compare cette image à toute la base et vous demande où enregistrer le fichier `.csv`.
+
+### Analyse des résultats
+
+- **Fichier CSV** : Ouvrez-le avec Excel. Utilisez le séparateur `;`.
+- **Statuts Scientifiques** :
+  - **VP** : Vrai Positif (Match correct).
+  - **VN** : Vrai Négatif (Rejet correct).
+  - **FP** : Faux Positif (Imposteur accepté).
+  - **FN** : Faux Négatif (Même personne rejetée).
+
+### Génération de graphiques (Optionnel)
+
+Si vous avez Python installé, vous pouvez générer des graphiques de performance :
+
+```bash
+pip install pandas matplotlib seaborn
+python analyze_benchmark.py "votre_resultat.csv"
+```
+
+Cela générera un histogramme de distribution des scores et calculera les taux d'erreur globaux.
+
+---
+
 _Développement par HTECH 2005_
