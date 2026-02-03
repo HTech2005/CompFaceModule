@@ -13,13 +13,13 @@ public class Pretraitement {
     public static ImageProcessor pt(ImageProcessor ip) {
         // 1. Convertir en niveaux de gris et redimensionner
         ip = ip.convertToByte(true);
-        ip = ip.resize(128, 128);
+        ip = ip.resize(130, 130);
         
-        // 1.5. Appliquer un filtre Médian (Améliore la robustesse aux lunettes en lissant les montures fines)
-        ip.medianFilter();
+        // Filtre Médian désactivé (trop lissant pour LBP)
+        // ip.medianFilter();
         
-        // 1.6. Appliquer un léger flou gaussien pour réduire le bruit
-        ip.blurGaussian(0.8);
+        // Très léger flou pour supprimer le bruit sans affecter la texture 
+        ip.blurGaussian(0.4);
 
         // 2. Appliquer CLAHE via OpenCV pour une robustesse maximale à l'éclairage
         try {

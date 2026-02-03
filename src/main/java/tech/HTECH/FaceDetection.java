@@ -42,12 +42,7 @@ public class FaceDetection {
         try {
             opencv_imgproc.cvtColor(image, gray, opencv_imgproc.COLOR_BGR2GRAY);
 
-            // --- DEBUT MODIFICATION CLAHE (Conformité README) ---
-            Mat claheApplied = new Mat();
-            org.bytedeco.opencv.opencv_imgproc.CLAHE clahe = opencv_imgproc.createCLAHE(2.0, new Size(8, 8));
-            clahe.apply(gray, claheApplied);
-            gray = claheApplied;
-            // --- FIN MODIFICATION CLAHE ---
+            // --- CLAHE retiré ici pour éviter le Double-CLAHE qui détruit la texture ---
 
             // Détecter les visages (50x50 suffit pour le temps réel)
             RectVector faces = new RectVector();
@@ -70,8 +65,8 @@ public class FaceDetection {
             }
 
             // Recadrage interne : Réduire de 15%
-            int paddingW = (int) (largestFace.width() * 0.15);
-            int paddingH = (int) (largestFace.height() * 0.15);
+            int paddingW = (int) (largestFace.width() * 0.10);
+            int paddingH = (int) (largestFace.height() * 0.10);
 
             Rect coreFace = new Rect(
                     largestFace.x() + paddingW,

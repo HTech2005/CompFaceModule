@@ -10,7 +10,7 @@ public class LBP {
         double[][] TLPB = new double[height][width];
 
         for (int j = 1; j < height - 1; j++) {
-            for (int i = 1; i <= width - 1; i++) {
+            for (int i = 1; i < width - 1; i++) {
                 int som = 0;
                 int center = ip.getPixel(i, j);
 
@@ -89,6 +89,9 @@ public class LBP {
 
                 for (int y = startY; y < endY; y++) {
                     for (int x = startX; x < endX; x++) {
+                        // Skip the absolute borders of the whole image (always 0 from LBP2D)
+                        if (y == 0 || y == height - 1 || x == 0 || x == width - 1) continue;
+
                         int val = (int) tlbp[y][x];
                         if (val >= 0 && val < 256) {
                             cellHist[val]++;
@@ -111,6 +114,17 @@ public class LBP {
             }
         }
         return finalHist;
+    }
+    public static ImageProcessor drawLBP(double[][] tlbp) {
+        int height = tlbp.length;
+        int width = tlbp[0].length;
+        ij.process.ByteProcessor bp = new ij.process.ByteProcessor(width, height);
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                bp.putPixel(x, y, (int) tlbp[y][x]);
+            }
+        }
+        return bp;
     }
 
 }

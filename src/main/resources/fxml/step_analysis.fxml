@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.text.Text?>
+
+<VBox spacing="15" xmlns:fx="http://javafx.com/fxml" fx:controller="tech.HTECH.ui.StepAnalysisController" style="-fx-background-color: #121212;">
+    <padding>
+        <Insets top="15" right="15" bottom="15" left="15"/>
+    </padding>
+
+    <HBox spacing="20" alignment="CENTER">
+        <VBox spacing="5" alignment="CENTER">
+            <Button text="Charger Image 1" onAction="#handleUpload1" 
+                    style="-fx-background-color: #3d85c6; -fx-text-fill: white; -fx-font-weight: bold;"/>
+            <Label fx:id="lblStatus1" text="Vide" style="-fx-text-fill: #aaaaaa; -fx-font-size: 10;"/>
+        </VBox>
+        <VBox spacing="5" alignment="CENTER">
+            <Button text="Charger Image 2" onAction="#handleUpload2" 
+                    style="-fx-background-color: #c63d3d; -fx-text-fill: white; -fx-font-weight: bold;"/>
+            <Label fx:id="lblStatus2" text="Vide" style="-fx-text-fill: #aaaaaa; -fx-font-size: 10;"/>
+        </VBox>
+        <Button text="Réinitialiser" onAction="#handleReset" style="-fx-background-color: #444; -fx-text-fill: white;"/>
+    </HBox>
+
+    <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;">
+        <VBox spacing="20">
+            <!-- Processing Pipelines -->
+            <HBox spacing="20">
+                <!-- Column Image 1 -->
+                <VBox spacing="10" HBox.hgrow="ALWAYS" style="-fx-background-color: #1a1a1a; -fx-padding: 10; -fx-background-radius: 5;">
+                    <Label text="PIPELINE IMAGE 1" style="-fx-text-fill: #3d85c6; -fx-font-weight: bold;"/>
+                    <FlowPane hgap="10" vgap="10">
+                        <VBox spacing="2" alignment="CENTER">
+                            <Label text="Original" style="-fx-text-fill: #888; -fx-font-size: 9;"/>
+                            <ImageView fx:id="img1_Original" fitWidth="100" fitHeight="100" preserveRatio="true"/>
+                        </VBox>
+                        <VBox spacing="2" alignment="CENTER">
+                            <Label text="Gris/Detect" style="-fx-text-fill: #888; -fx-font-size: 9;"/>
+                            <ImageView fx:id="img1_Gray" fitWidth="100" fitHeight="100" preserveRatio="true"/>
+                        </VBox>
+                        <VBox spacing="2" alignment="CENTER">
+                            <Label text="Median" style="-fx-text-fill: #888; -fx-font-size: 9;"/>
+                            <ImageView fx:id="img1_Median" fitWidth="100" fitHeight="100" preserveRatio="true"/>
+                        </VBox>
+                        <VBox spacing="2" alignment="CENTER">
+                            <Label text="CLAHE" style="-fx-text-fill: #888; -fx-font-size: 9;"/>
+                            <ImageView fx:id="img1_Clahe" fitWidth="100" fitHeight="100" preserveRatio="true"/>
+                        </VBox>
+                        <VBox spacing="2" alignment="CENTER">
+                            <Label text="Carte LBP" style="-fx-text-fill: #888; -fx-font-size: 9;"/>
+                            <ImageView fx:id="img1_LBP" fitWidth="100" fitHeight="100" preserveRatio="true"/>
+                        </VBox>
+                    </FlowPane>
+                    
+                    <Label text="Vecteurs (Aperçu)" style="-fx-text-fill: #888; -fx-font-size: 11;"/>
+                    <TabPane tabClosingPolicy="UNAVAILABLE" style="-fx-min-height: 150;">
+                        <Tab text="Histogramme">
+                            <TextArea fx:id="txt1_Histo" editable="false" wrapText="true" style="-fx-control-inner-background: #000; -fx-text-fill: #00ff00; -fx-font-family: 'Consolas'; -fx-font-size: 10;"/>
+                        </Tab>
+                        <Tab text="LBP">
+                            <TextArea fx:id="txt1_LBP" editable="false" wrapText="true" style="-fx-control-inner-background: #000; -fx-text-fill: #00ff00; -fx-font-family: 'Consolas'; -fx-font-size: 10;"/>
+                        </Tab>
+                        <Tab text="Fusion Norm.">
+                            <TextArea fx:id="txt1_Fusion" editable="false" wrapText="true" style="-fx-control-inner-background: #000; -fx-text-fill: #00ff00; -fx-font-family: 'Consolas'; -fx-font-size: 10;"/>
+                        </Tab>
+                    </TabPane>
+                </VBox>
+
+                <!-- Column Image 2 -->
+                <VBox spacing="10" HBox.hgrow="ALWAYS" style="-fx-background-color: #1a1a1a; -fx-padding: 10; -fx-background-radius: 5;">
+                    <Label text="PIPELINE IMAGE 2" style="-fx-text-fill: #c63d3d; -fx-font-weight: bold;"/>
+                    <FlowPane hgap="10" vgap="10">
+                        <VBox spacing="2" alignment="CENTER">
+                            <Label text="Original" style="-fx-text-fill: #888; -fx-font-size: 9;"/>
+                            <ImageView fx:id="img2_Original" fitWidth="100" fitHeight="100" preserveRatio="true"/>
+                        </VBox>
+                        <VBox spacing="2" alignment="CENTER">
+                            <Label text="Gris/Detect" style="-fx-text-fill: #888; -fx-font-size: 9;"/>
+                            <ImageView fx:id="img2_Gray" fitWidth="100" fitHeight="100" preserveRatio="true"/>
+                        </VBox>
+                        <VBox spacing="2" alignment="CENTER">
+                            <Label text="Median" style="-fx-text-fill: #888; -fx-font-size: 9;"/>
+                            <ImageView fx:id="img2_Median" fitWidth="100" fitHeight="100" preserveRatio="true"/>
+                        </VBox>
+                        <VBox spacing="2" alignment="CENTER">
+                            <Label text="CLAHE" style="-fx-text-fill: #888; -fx-font-size: 9;"/>
+                            <ImageView fx:id="img2_Clahe" fitWidth="100" fitHeight="100" preserveRatio="true"/>
+                        </VBox>
+                        <VBox spacing="2" alignment="CENTER">
+                            <Label text="Carte LBP" style="-fx-text-fill: #888; -fx-font-size: 9;"/>
+                            <ImageView fx:id="img2_LBP" fitWidth="100" fitHeight="100" preserveRatio="true"/>
+                        </VBox>
+                    </FlowPane>
+
+                    <Label text="Vecteurs (Aperçu)" style="-fx-text-fill: #888; -fx-font-size: 11;"/>
+                    <TabPane tabClosingPolicy="UNAVAILABLE" style="-fx-min-height: 150;">
+                        <Tab text="Histogramme">
+                            <TextArea fx:id="txt2_Histo" editable="false" wrapText="true" style="-fx-control-inner-background: #000; -fx-text-fill: #ff8800; -fx-font-family: 'Consolas'; -fx-font-size: 10;"/>
+                        </Tab>
+                        <Tab text="LBP">
+                            <TextArea fx:id="txt2_LBP" editable="false" wrapText="true" style="-fx-control-inner-background: #000; -fx-text-fill: #ff8800; -fx-font-family: 'Consolas'; -fx-font-size: 10;"/>
+                        </Tab>
+                        <Tab text="Fusion Norm.">
+                            <TextArea fx:id="txt2_Fusion" editable="false" wrapText="true" style="-fx-control-inner-background: #000; -fx-text-fill: #ff8800; -fx-font-family: 'Consolas'; -fx-font-size: 10;"/>
+                        </Tab>
+                    </TabPane>
+                </VBox>
+            </HBox>
+
+            <!-- Results Section -->
+            <VBox spacing="10" style="-fx-background-color: #222; -fx-padding: 15; -fx-background-radius: 8; -fx-border-color: #333; -fx-border-width: 1;">
+                <Label text="RÉSULTATS DE COMPARAISON / ANALYSE" style="-fx-text-fill: #00ff00; -fx-font-size: 16; -fx-font-weight: bold;"/>
+                
+                <GridPane hgap="30" vgap="15">
+                    <!-- Column headers -->
+                    <Label text="MÉTRIQUE" style="-fx-text-fill: #888; -fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                    <Label text="VALEUR BRUTE" style="-fx-text-fill: #888; -fx-font-weight: bold;" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                    <Label text="SCORE (%)" style="-fx-text-fill: #888; -fx-font-weight: bold;" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+                    <Label text="INTERPRÉTATION" style="-fx-text-fill: #888; -fx-font-weight: bold;" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+
+                    <!-- Chi-Square -->
+                    <Label text="Distance Khi-Carré" style="-fx-text-fill: white;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                    <Label fx:id="resChiBrut" text="-" style="-fx-text-fill: #3d85c6;" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                    <Label fx:id="resChiPct" text="-" style="-fx-text-fill: #3d85c6;" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+                    <Label fx:id="resChiDesc" text="-" style="-fx-text-fill: #aaaaaa; -fx-font-size: 11;" GridPane.columnIndex="3" GridPane.rowIndex="1"/>
+
+                    <!-- Cosine -->
+                    <Label text="Similitude Cosinus" style="-fx-text-fill: white;" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                    <Label fx:id="resCosBrut" text="-" style="-fx-text-fill: #3d85c6;" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                    <Label fx:id="resCosPct" text="-" style="-fx-text-fill: #3d85c6;" GridPane.columnIndex="2" GridPane.rowIndex="2"/>
+                    <Label fx:id="resCosDesc" text="-" style="-fx-text-fill: #aaaaaa; -fx-font-size: 11;" GridPane.columnIndex="3" GridPane.rowIndex="2"/>
+
+                    <!-- Euclidean -->
+                    <Label text="Distance Euclidienne" style="-fx-text-fill: white;" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                    <Label fx:id="resEuclBrut" text="-" style="-fx-text-fill: #3d85c6;" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                    <Label fx:id="resEuclPct" text="-" style="-fx-text-fill: #3d85c6;" GridPane.columnIndex="2" GridPane.rowIndex="3"/>
+                    <Label fx:id="resEuclDesc" text="-" style="-fx-text-fill: #aaaaaa; -fx-font-size: 11;" GridPane.columnIndex="3" GridPane.rowIndex="3"/>
+
+                    <Separator GridPane.columnSpan="4" GridPane.rowIndex="4"/>
+
+                    <!-- Global Result -->
+                    <Label text="SCORE GLOBAL" style="-fx-text-fill: #00ff00; -fx-font-weight: bold; -fx-font-size: 14;" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
+                    <HBox spacing="10" alignment="CENTER_LEFT" GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="5">
+                         <Label fx:id="resGlobalScore" text="-%" style="-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 20;"/>
+                         <Label fx:id="resMatch" text="" style="-fx-text-fill: #00ff00; -fx-font-weight: bold;"/>
+                    </HBox>
+                </GridPane>
+                
+                <Label fx:id="lblSummary" text="En attente d'images pour comparaison ou recherche BDD..." style="-fx-text-fill: #ffaa00; -fx-font-style: italic;"/>
+            </VBox>
+        </VBox>
+    </ScrollPane>
+</VBox>

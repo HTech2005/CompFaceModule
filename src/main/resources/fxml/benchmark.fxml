@@ -22,6 +22,10 @@
     <HBox alignment="CENTER_LEFT" spacing="15">
         <Label text="Laboratoire de Tests Scientifiques" style="-fx-text-fill: white; -fx-font-size: 26; -fx-font-weight: bold;"/>
         <Region HBox.hgrow="ALWAYS" />
+        <VBox spacing="2">
+            <Label text="Métrique de décision :" style="-fx-text-fill: #aaaaaa; -fx-font-size: 10;"/>
+            <ComboBox fx:id="comboMetric" prefWidth="200" style="-fx-background-color: #333333; -fx-text-fill: white;"/>
+        </VBox>
         <Button fx:id="btnRunBenchmark" text="Analyse 1:N" onAction="#handleRunBenchmark" style="-fx-background-color: #6200ee; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 15; -fx-background-radius: 5;"/>
         <Button fx:id="btnRunFullBenchmark" text="Analyse All:N (Complet)" onAction="#handleRunFullBenchmark" style="-fx-background-color: #3700b3; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 15; -fx-background-radius: 5;"/>
         <Button text="Exporter CSV" onAction="#handleExportCSV" style="-fx-background-color: #03dac6; -fx-text-fill: black; -fx-font-weight: bold; -fx-padding: 8 15; -fx-background-radius: 5;"/>
@@ -66,6 +70,10 @@
             <VBox spacing="10" HBox.hgrow="ALWAYS" style="-fx-background-color: #1e1e1e; -fx-padding: 15; -fx-background-radius: 10; -fx-border-color: #333333; -fx-border-radius: 10;">
                 <Label text="Précision" style="-fx-text-fill: #aaaaaa; -fx-font-size: 12;"/>
                 <Label fx:id="lblPrecision" text="0.00%" style="-fx-text-fill: #cf6679; -fx-font-size: 24; -fx-font-weight: bold;"/>
+            </VBox>
+            <VBox spacing="10" HBox.hgrow="ALWAYS" style="-fx-background-color: #1e1e1e; -fx-padding: 15; -fx-background-radius: 10; -fx-border-color: #00ff88; -fx-border-width: 2; -fx-border-radius: 10;">
+                <Label text="EER (Equal Error Rate)" style="-fx-text-fill: #00ff88; -fx-font-size: 12; -fx-font-weight: bold;"/>
+                <Label fx:id="lblEER" text="0.00%" style="-fx-text-fill: white; -fx-font-size: 24; -fx-font-weight: bold;"/>
             </VBox>
         </HBox>
     </VBox>
@@ -127,6 +135,45 @@
                             <yAxis><NumberAxis label="FRR (%)" side="LEFT" tickLabelFill="WHITE" lowerBound="0" upperBound="100" autoRanging="true"/></yAxis>
                         </LineChart>
                     </VBox>
+                </Tab>
+                <Tab text="Error Rates (FAR/FRR vs Threshold)">
+                    <VBox spacing="10" style="-fx-padding: 15;">
+                        <LineChart fx:id="chartErrorRates" animated="false" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent;" legendSide="RIGHT">
+                            <xAxis><NumberAxis label="Seuil (%)" side="BOTTOM" tickLabelFill="WHITE" lowerBound="0" upperBound="100" autoRanging="false"/></xAxis>
+                            <yAxis><NumberAxis label="Taux d'Erreur (%)" side="LEFT" tickLabelFill="WHITE" lowerBound="0" upperBound="100" autoRanging="false"/></yAxis>
+                        </LineChart>
+                    </VBox>
+                </Tab>
+                <Tab text="📚 Guide d'Interprétation">
+                    <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent;">
+                        <VBox spacing="20" style="-fx-padding: 20; -fx-background-color: #1a1a1a;">
+                            <VBox spacing="5" style="-fx-background-color: #262626; -fx-padding: 15; -fx-background-radius: 5; -fx-border-color: #3700b3; -fx-border-width: 0 0 0 4;">
+                                <Label text="FAR (False Acceptance Rate) - Sécurité" style="-fx-text-fill: #ff4e4e; -fx-font-weight: bold; -fx-font-size: 14;"/>
+                                <Label text="Représente le risque qu'un intrus soit accepté par erreur. Si ce score est haut, le système est vulnérable aux imposteurs." wrapText="true" style="-fx-text-fill: #cccccc;"/>
+                            </VBox>
+                            
+                            <VBox spacing="5" style="-fx-background-color: #262626; -fx-padding: 15; -fx-background-radius: 5; -fx-border-color: #ff9900; -fx-border-width: 0 0 0 4;">
+                                <Label text="FRR (False Rejection Rate) - Confort" style="-fx-text-fill: #ff9900; -fx-font-weight: bold; -fx-font-size: 14;"/>
+                                <Label text="Représente le taux de rejet d'utilisateurs légitimes. Un FRR élevé signifie que le système est 'frustrant' car il ne reconnaît pas les personnes pourtant connues." wrapText="true" style="-fx-text-fill: #cccccc;"/>
+                            </VBox>
+
+                            <VBox spacing="5" style="-fx-background-color: #262626; -fx-padding: 15; -fx-background-radius: 5; -fx-border-color: #00ff88; -fx-border-width: 0 0 0 4;">
+                                <Label text="EER (Equal Error Rate) - Performance Globale" style="-fx-text-fill: #00ff88; -fx-font-weight: bold; -fx-font-size: 14;"/>
+                                <Label text="C'est le point où FAR = FRR. C'est le meilleur indicateur de la qualité de votre algorithme. Plus l'EER est bas, plus le système est performant et équilibré." wrapText="true" style="-fx-text-fill: #cccccc;"/>
+                            </VBox>
+
+                            <VBox spacing="5" style="-fx-background-color: #262626; -fx-padding: 15; -fx-background-radius: 5; -fx-border-color: #00b0ff; -fx-border-width: 0 0 0 4;">
+                                <Label text="F1-Score / Précision / Recall" style="-fx-text-fill: #00b0ff; -fx-font-weight: bold; -fx-font-size: 14;"/>
+                                <Label text="Le F1-Score est la synthèse de la précision et du rappel. Un score proche de 1.0 indique un système quasi-parfait." wrapText="true" style="-fx-text-fill: #cccccc;"/>
+                            </VBox>
+
+                            <VBox spacing="10" style="-fx-padding: 10;">
+                                <Label text="Conseil de réglage :" style="-fx-text-fill: white; -fx-font-weight: bold;"/>
+                                <Label text="• Haute Sécurité : Privilégiez un seuil élevé (ex: 75%). Le FAR sera proche de 0%." style="-fx-text-fill: #aaaaaa;"/>
+                                <Label text="• Fluidité Maximale : Utilisez le seuil proche de l'EER (ex: 61.5%)." style="-fx-text-fill: #aaaaaa;"/>
+                            </VBox>
+                        </VBox>
+                    </ScrollPane>
                 </Tab>
             </TabPane>
         </VBox>

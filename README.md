@@ -25,7 +25,7 @@ _Composant : `Pretraitement.java`_
 Pour que l'IA "voie" la même chose peu importe l'environnement, l'image subit une transformation lourde :
 
 1. **Conversion en Gris** : Élimine les biais liés à la balance des blancs des caméras.
-2. **Redimensionnement (128x128)** : Fixe une résolution standard indispensable pour la grille de caractéristiques.
+2. **Redimensionnement (160x160)** : Fixe une résolution standard indispensable pour la grille de caractéristiques.
 3. **Filtre Médian** : Supprime le bruit poivre et sel. **Choix critique** : aide à atténuer les reflets sur les montures de lunettes fines.
 4. **Flou Gaussien ($\sigma=0.8$)** : Lisse les micro-défauts de capteur.
 5. **CLAHE (Contrast Limited Adaptive Histogram Equalization)** :
@@ -36,7 +36,7 @@ Pour que l'IA "voie" la même chose peu importe l'environnement, l'image subit u
 
 _Composants : `LBP.java`, `Histogram.java`, `Fusion.java`_
 
-Nous utilisons une approche par **Grille de 8x8 blocs** (64 sous-régions de 16x16 pixels).
+Nous utilisons une approche par **Grille de 8x8 blocs**, stabilisée sur une base de **130x130 pixels**. (Le cœur de calcul LBP étant de 128x128, cela permet des blocs parfaits de 16x16 sans distorsion).
 
 #### A. Expert Texture : LBP (Local Binary Patterns)
 
@@ -70,10 +70,11 @@ Le verdict final est une fusion pondérée de trois mesures de distance :
 | **Cosinus ($Cos$)**      | $\frac{A \cdot B}{\|A\| \|B\|}$        | **40%** | Analyse la structure globale (robuste aux lunettes). |
 | **Euclidienne ($d$)**    | $\sqrt{\sum (A_i - B_i)^2}$            | **20%** | Mesure l'écart géométrique pur.                      |
 
-**Fusion Finale (Recalibration 6.0)** :
-$$Score = (Score_{\chi^2} \times 0.4) + (Score_{Cos} \times 0.4) + (Score_{Eucl} \times 0.2)$$
+**Fusion Finale (Recalibration 8.0 - Solid Guard)** :
+$$Score = (Score_{Cos} \times 0.6) + (Score_{\chi^2} \times 0.3) + (Score_{Eucl} \times 0.1)$$
 
-- **Diviseur Euclidien** : 0.065 (Choisi empiriquement pour équilibrer la sévérité).
+- **Nouveauté** : Correction du "Biais de Bordure" LBP (exclusion des pixels 0 aux bords des histogrammes).
+- **Priorité Cosinus** : Le Cosinus est désormais le pilier central (60%) pour une robustesse maximale.
 - **Seuil de Verdict** : **61.5%**.
 
 ---
@@ -98,8 +99,20 @@ Le module de tests permet de déduire la performance réelle de l'algorithme sur
 ### Interpréation des Graphiques
 
 - **Separability** : Si les deux courbes (Authentiques vs Imposteurs) sont séparées par un vide, le système est stable.
-- **ROC Curve** : La performance optimale se situe là où la courbe est la plus proche du coin idéal.
+- **ROC Curve** : La performance optimale se situe là où la courbe est la plus proche du coin supérieur gauche.
+- **Error Rates (FAR/FRR vs Threshold)** : Ce graphique montre l'intersection entre la sécurité et le confort.
 
----
+### 🔬 Mesures de Performance Scientifiques
+
+| Métrique                     | Formule Mathématique                | Interprétation                                                              |
+| :--------------------------- | :---------------------------------- | :-------------------------------------------------------------------------- |
+| **FAR** (Fausse Acceptation) | $FAR = \frac{FP}{FP + VN}$          | **Sécurité** : Risque qu'un intrus soit accepté.                            |
+| **FRR** (Faux Rejet)         | $FRR = \frac{FN}{FN + VP}$          | **Confort** : Risque qu'un utilisateur légitime soit rejeté.                |
+| **EER** (Equal Error Rate)   | $T$ tel que $FAR(T) \approx FRR(T)$ | **Point d'Équilibre** : Plus l'EER est bas, plus le système est performant. |
+
+> [!IMPORTANT]
+>
+> - Dans un contexte de **haute sécurité** (banque, coffre), on privilégie un FAR très bas, quitte à avoir un FRR un peu plus haut.
+> - Dans un contexte de **confort** (déverrouillage téléphone), on privilégie un FRR bas pour ne pas frustrer l'utilisateur.
 
 _Ce document technique est maintenu par HTECH 2005._

@@ -17,6 +17,7 @@
             <Button text="Comparer (CDV)" fx:id="btnCDV" onAction="#showCDV" maxWidth="Infinity" style="-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;"/>
             <Button text="Temps Réel (TR)" fx:id="btnTR" onAction="#showTR" maxWidth="Infinity" style="-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;"/>
             <Button text="Analyse (CV)" fx:id="btnCV" onAction="#showCV" maxWidth="Infinity" style="-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;"/>
+            <Button text="Analyse Détaillée (AD)" fx:id="btnAD" onAction="#showStepAnalysis" maxWidth="Infinity" style="-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;"/>
             <Button text="Dashboard" fx:id="btnDashboard" onAction="#showDashboard" maxWidth="Infinity" style="-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;"/>
             <Button text="Tests &amp; Benchmark" fx:id="btnBenchmark" onAction="#showBenchmark" maxWidth="Infinity" style="-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;"/>
         </VBox>

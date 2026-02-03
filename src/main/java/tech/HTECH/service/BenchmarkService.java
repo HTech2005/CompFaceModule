@@ -18,7 +18,9 @@ public class BenchmarkService {
         private double eucl;
         private double cos;
         private double global;
+        private double activeScore;
         private boolean decision;
+        private boolean theoreticallySame;
         private String status; // VP, VN, FP, FN
 
         public String getImageA() { return imageA; }
@@ -27,9 +29,15 @@ public class BenchmarkService {
         public double getEucl() { return eucl; }
         public double getCos() { return cos; }
         public double getGlobal() { return global; }
+        public double getActiveScore() { return activeScore; }
+        public void setActiveScore(double activeScore) { this.activeScore = activeScore; }
         public String getDecision() { return decision ? "MATCH" : "NO_MATCH"; }
+        public void setDecision(boolean decision) { this.decision = decision; }
         public boolean isDecision() { return decision; }
+        public boolean isTheoreticallySame() { return theoreticallySame; }
+        public void setTheoreticallySame(boolean theoreticallySame) { this.theoreticallySame = theoreticallySame; }
         public String getStatus() { return status; }
+        public void setStatus(String status) { this.status = status; }
 
         public String toCSVRow() {
             return String.format("%s;%s;%.2f;%.2f;%.2f;%.2f;%s;%s",
@@ -38,6 +46,10 @@ public class BenchmarkService {
     }
 
     public List<BenchmarkResult> runAnalysis(File targetFile) {
+        return runAnalysis(targetFile, tech.HTECH.Decision.DecisionMode.TRIPLE_FUSION);
+    }
+
+    public List<BenchmarkResult> runAnalysis(File targetFile, tech.HTECH.Decision.DecisionMode mode) {
         List<BenchmarkResult> results = new ArrayList<>();
         Mat faceA = FaceDetection.detectFace(targetFile.getAbsolutePath());
         if (faceA == null) return results;
@@ -53,7 +65,7 @@ public class BenchmarkService {
 
             double[] featuresB = entry.getValue();
 
-            FaceService.ComparisonResult res = faceService.compareFeatures(featuresA, featuresB);
+            FaceService.ComparisonResult res = faceService.compareFeatures(featuresA, featuresB, mode);
             if (res == null) continue;
 
             BenchmarkResult br = new BenchmarkResult();
@@ -63,24 +75,25 @@ public class BenchmarkService {
             br.eucl = res.getScoreEuclidien();
             br.cos = res.getScoreCosinus();
             br.global = res.getScoreGlobal();
+            br.activeScore = res.getActiveScore();
             br.decision = res.isMatch();
+            br.theoreticallySame = isTheoreticallySame(targetFile.getName(), nameB);
             
-            boolean theoreticallySame = isTheoreticallySame(targetFile.getName(), nameB);
-            
-            if (theoreticallySame && br.decision) br.status = "VP (Vrai Positif)";
-            else if (theoreticallySame && !br.decision) br.status = "FN (Faux Négatif)";
-            else if (!theoreticallySame && br.decision) br.status = "FP (Faux Positif)";
+            if (br.theoreticallySame && br.decision) br.status = "VP (Vrai Positif)";
+            else if (br.theoreticallySame && !br.decision) br.status = "FN (Faux Négatif)";
+            else if (!br.theoreticallySame && br.decision) br.status = "FP (Faux Positif)";
             else br.status = "VN (Vrai Négatif)";
 
             results.add(br);
         }
         return results;
     }
+
     public List<BenchmarkResult> runFullAnalysis() {
-        return runFullAnalysis(null);
+        return runFullAnalysis(tech.HTECH.Decision.DecisionMode.TRIPLE_FUSION, null);
     }
 
-    public List<BenchmarkResult> runFullAnalysis(java.util.function.BiConsumer<Integer, Integer> progressCallback) {
+    public List<BenchmarkResult> runFullAnalysis(tech.HTECH.Decision.DecisionMode mode, java.util.function.BiConsumer<Integer, Integer> progressCallback) {
         List<BenchmarkResult> results = new ArrayList<>();
         Map<String, double[]> featureMap = faceService.getDatabaseFeatures();
 
@@ -103,7 +116,7 @@ public class BenchmarkService {
 
                 double[] featuresB = featureMap.get(nameB);
 
-                FaceService.ComparisonResult res = faceService.compareFeatures(featuresA, featuresB);
+                FaceService.ComparisonResult res = faceService.compareFeatures(featuresA, featuresB, mode);
                 if (res == null) continue;
 
                 BenchmarkResult br = new BenchmarkResult();
@@ -113,13 +126,13 @@ public class BenchmarkService {
                 br.eucl = res.getScoreEuclidien();
                 br.cos = res.getScoreCosinus();
                 br.global = res.getScoreGlobal();
+                br.activeScore = res.getActiveScore();
                 br.decision = res.isMatch();
+                br.theoreticallySame = isTheoreticallySame(nameA, nameB);
 
-                boolean theoreticallySame = isTheoreticallySame(nameA, nameB);
-
-                if (theoreticallySame && br.decision) br.status = "VP (Vrai Positif)";
-                else if (theoreticallySame && !br.decision) br.status = "FN (Faux Négatif)";
-                else if (!theoreticallySame && br.decision) br.status = "FP (Faux Positif)";
+                if (br.theoreticallySame && br.decision) br.status = "VP (Vrai Positif)";
+                else if (br.theoreticallySame && !br.decision) br.status = "FN (Faux Négatif)";
+                else if (!br.theoreticallySame && br.decision) br.status = "FP (Faux Positif)";
                 else br.status = "VN (Vrai Négatif)";
 
                 results.add(br);

@@ -13,7 +13,7 @@ public class MainController {
     @FXML
     private StackPane contentArea;
     @FXML
-    private Button btnHome, btnCDV, btnTR, btnCV, btnDashboard, btnBenchmark;
+    private Button btnHome, btnCDV, btnTR, btnCV, btnAD, btnDashboard, btnBenchmark;
 
     @FXML
     public void initialize() {
@@ -45,6 +45,12 @@ public class MainController {
     }
 
     @FXML
+    private void showStepAnalysis() {
+        loadView("/fxml/step_analysis.fxml");
+        setActiveButton(btnAD);
+    }
+
+    @FXML
     private void showDashboard() {
         loadView("/fxml/dashboard.fxml");
         setActiveButton(btnDashboard);
@@ -71,6 +77,9 @@ public class MainController {
         btnCDV.setStyle("-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;");
         btnTR.setStyle("-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;");
         btnCV.setStyle("-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;");
+        if (btnAD != null) {
+            btnAD.setStyle("-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;");
+        }
         btnDashboard.setStyle("-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;");
         if (btnBenchmark != null) {
             btnBenchmark.setStyle("-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-alignment: CENTER_LEFT;");

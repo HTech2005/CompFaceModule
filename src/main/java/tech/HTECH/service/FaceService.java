@@ -77,9 +77,13 @@ public class FaceService {
     }
 
     public ComparisonResult compareFaces(Mat face1, Mat face2) {
+        return compareFaces(face1, face2, Decision.DecisionMode.TRIPLE_FUSION);
+    }
+
+    public ComparisonResult compareFaces(Mat face1, Mat face2, Decision.DecisionMode mode) {
         double[] N1 = extractFeatures(face1);
         double[] N2 = extractFeatures(face2);
-        return compareFeatures(N1, N2);
+        return compareFeatures(N1, N2, mode);
     }
 
     public double[] extractFeatures(Mat face) {
@@ -92,6 +96,10 @@ public class FaceService {
     }
 
     public ComparisonResult compareFeatures(double[] N1, double[] N2) {
+        return compareFeatures(N1, N2, Decision.DecisionMode.TRIPLE_FUSION);
+    }
+
+    public ComparisonResult compareFeatures(double[] N1, double[] N2, Decision.DecisionMode mode) {
         if (N1 == null || N2 == null) return null;
 
         double distChi2 = Comparaison.distanceKhiCarre(N1, N2);
@@ -100,21 +108,37 @@ public class FaceService {
 
         double scoreTexture = Compatibilite.CalculCompatibilite(distChi2);
         double scoreEucl = Math.max(0.0, (1.0 - (distEucl / 0.065)) * 100.0);
+        double scoreCos = cos * 100.0;
 
-        // Poids rééquilibrés : 40% Texture (Chi2), 40% Global (Cosine), 20% Géométrie (Eucl)
-        double globalScore = (scoreTexture * 0.4) + (cos * 40.0) + (scoreEucl * 0.2);
+        // Poids optimisés (Recalib 8.0) : Cosinus (60%) + Texture (30%) + Géo (10%)
+        // Le Cosinus est beaucoup plus robuste aux variations de pose et d'éclairage
+        double globalScore = (scoreCos * 0.6) + (scoreTexture * 0.3) + (scoreEucl * 0.1);
+
+        double activeScore;
+        switch (mode) {
+            case CHI_SQUARE: activeScore = scoreTexture; break;
+            case EUCLIDEAN: activeScore = scoreEucl; break;
+            case COSINE: activeScore = scoreCos; break;
+            case TRIPLE_FUSION:
+            default: activeScore = globalScore; break;
+        }
 
         ComparisonResult result = new ComparisonResult();
-        result.setMatch(Decision.dec(distChi2, cos, distEucl));
+        result.setMatch(Decision.dec(distChi2, cos, distEucl, mode));
         result.setScoreChi2(scoreTexture);
         result.setScoreEuclidien(scoreEucl);
-        result.setScoreCosinus(cos * 100);
+        result.setScoreCosinus(scoreCos);
         result.setScoreGlobal(globalScore);
+        result.setActiveScore(activeScore);
 
         return result;
     }
 
     public RecognitionResult recognizeFace(Mat face) {
+        return recognizeFace(face, Decision.DecisionMode.TRIPLE_FUSION);
+    }
+
+    public RecognitionResult recognizeFace(Mat face, Decision.DecisionMode mode) {
         if (face == null)
             return null;
 
@@ -125,7 +149,7 @@ public class FaceService {
         double[] features = NormalizeVector.normalize(fusion);
 
         String bestMatchFile = null;
-        double bestScore = 0.0;
+        double bestScore = -1.0;
         double threshold = 61.5; // Seuil recalibré à 61.5% (Recalib 6.0)
 
         for (Map.Entry<String, double[]> entry : databaseFeatures.entrySet()) {
@@ -133,18 +157,28 @@ public class FaceService {
             double cosSim = Comparaison.similitudeCosinus(features, entry.getValue());
             double distEucl = Comparaison.distanceEuclidienne(features, entry.getValue());
 
-            // Poids rééquilibrés : 40% Texture (Chi2), 40% Global (Cosine), 20% Géométrie (Eucl)
-            double score = (Compatibilite.CalculCompatibilite(distChi2) * 0.4) + (cosSim * 40.0)
-                    + (Math.max(0.0, (1.0 - (distEucl / 0.065)) * 100.0) * 0.2);
+            double scoreChi2 = Compatibilite.CalculCompatibilite(distChi2);
+            double scoreEucl = Math.max(0.0, (1.0 - (distEucl / 0.065)) * 100.0);
+            double scoreCos = cosSim * 100.0;
+            double globalScore = (scoreCos * 0.6) + (scoreChi2 * 0.3) + (scoreEucl * 0.1);
 
-            if (score > bestScore) {
-                bestScore = score;
+            double currentScore;
+            switch (mode) {
+                case CHI_SQUARE: currentScore = scoreChi2; break;
+                case EUCLIDEAN: currentScore = scoreEucl; break;
+                case COSINE: currentScore = scoreCos; break;
+                case TRIPLE_FUSION:
+                default: currentScore = globalScore; break;
+            }
+
+            if (currentScore > bestScore) {
+                bestScore = currentScore;
                 bestMatchFile = entry.getKey();
             }
         }
 
         System.out.println(
-                "DEBUG TR: Meilleur score trouvé = " + String.format("%.2f%%", bestScore) + " pour " + bestMatchFile);
+                "DEBUG TR: Meilleur score (" + mode + ") trouvé = " + String.format("%.2f%%", bestScore) + " pour " + bestMatchFile);
 
         RecognitionResult result = new RecognitionResult();
         result.setFound(bestMatchFile != null && bestScore >= threshold);
@@ -153,7 +187,7 @@ public class FaceService {
             result.setBestMatch(bestMatchFile.replaceFirst("[.][^.]+$", ""));
             result.setBestMatchFile(bestMatchFile);
             result.setScore(bestScore);
-            result.setScoreGlobal(bestScore);
+            result.setScoreGlobal(bestScore); // Note: might need better clarification for "global" vs "score"
 
             double[] bestFeatures = databaseFeatures.get(bestMatchFile);
             double bc2 = Comparaison.distanceKhiCarre(features, bestFeatures);
@@ -163,7 +197,7 @@ public class FaceService {
             result.setScoreChi2(Compatibilite.CalculCompatibilite(bc2));
             result.setScoreEuclidien(Math.max(0.0, (1.0 - (beu / 0.065)) * 100.0));
             result.setScoreCosinus(bcs * 100.0);
-            result.setMatch(Decision.dec(bc2, bcs, beu));
+            result.setMatch(Decision.dec(bc2, bcs, beu, mode));
         }
 
         return result;
@@ -175,6 +209,10 @@ public class FaceService {
         private double scoreEuclidien;
         private double scoreCosinus;
         private double scoreGlobal;
+        private double activeScore;
+
+        public double getActiveScore() { return activeScore; }
+        public void setActiveScore(double activeScore) { this.activeScore = activeScore; }
 
         public boolean isMatch() {
             return match;
