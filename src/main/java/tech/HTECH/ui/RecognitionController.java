@@ -135,6 +135,9 @@ public class RecognitionController {
                         }
                     }).start();
                 }
+
+                // release the temporary mat returned by converter
+                try { if (mat != null && !mat.empty()) mat.release(); } catch (Exception ignored) {}
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -162,12 +165,14 @@ public class RecognitionController {
             cropW = Math.min(matW - x, cropW);
             cropH = Math.min(matH - y, cropH);
 
-            org.bytedeco.opencv.opencv_core.Rect guideRect = new org.bytedeco.opencv.opencv_core.Rect(x, y, cropW,
+                org.bytedeco.opencv.opencv_core.Rect guideRect = new org.bytedeco.opencv.opencv_core.Rect(x, y, cropW,
                     cropH);
-            Mat croppedMat = new Mat(mat, guideRect);
+                Mat croppedMat = new Mat(mat, guideRect);
 
-            Mat face = FaceDetection.detectFaceMat(croppedMat);
-            if (face != null) {
+                Mat face = null;
+                try {
+                face = FaceDetection.detectFaceMat(croppedMat);
+                if (face != null) {
                 Platform.runLater(() -> faceGuide.setStyle(
                         "-fx-border-color: #00ff88; -fx-border-width: 4; -fx-border-style: solid; -fx-border-radius: 15;"));
                 FaceService.RecognitionResult result = faceService.recognizeFace(face);
@@ -217,7 +222,12 @@ public class RecognitionController {
                 }
 
                 Platform.runLater(() -> updateUI(result));
-            } else {
+                }
+            } finally {
+                try { if (face != null && !face.empty()) face.release(); } catch (Exception ignored) {}
+                try { if (croppedMat != null && !croppedMat.empty()) croppedMat.release(); } catch (Exception ignored) {}
+            }
+            if (face == null) {
                 // Notifier que rien n'est détecté
                 Platform.runLater(() -> {
                     faceGuide.setStyle(

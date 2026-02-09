@@ -22,9 +22,15 @@
     <HBox alignment="CENTER_LEFT" spacing="15">
         <Label text="Laboratoire de Tests Scientifiques" style="-fx-text-fill: white; -fx-font-size: 26; -fx-font-weight: bold;"/>
         <Region HBox.hgrow="ALWAYS" />
-        <VBox spacing="2">
-            <Label text="Métrique de décision :" style="-fx-text-fill: #aaaaaa; -fx-font-size: 10;"/>
-            <ComboBox fx:id="comboMetric" prefWidth="200" style="-fx-background-color: #333333; -fx-text-fill: white;"/>
+        <VBox spacing="5" alignment="CENTER_LEFT">
+            <Label text="Seuil de décision :" style="-fx-text-fill: #00ff88; -fx-font-size: 12; -fx-font-weight: bold;"/>
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Slider fx:id="sliderThreshold" min="30" max="90" value="61.5" showTickLabels="true" showTickMarks="true" 
+                        majorTickUnit="10" minorTickCount="4" blockIncrement="0.5" 
+                        prefWidth="220" style="-fx-pref-height: 40;"/>
+                <TextField fx:id="txtThreshold" text="61.5" prefWidth="80" promptText="Seuil"
+                           style="-fx-background-color: #333333; -fx-text-fill: white; -fx-alignment: center; -fx-font-weight: bold;"/>
+            </HBox>
         </VBox>
         <Button fx:id="btnRunBenchmark" text="Analyse 1:N" onAction="#handleRunBenchmark" style="-fx-background-color: #6200ee; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 15; -fx-background-radius: 5;"/>
         <Button fx:id="btnRunFullBenchmark" text="Analyse All:N (Complet)" onAction="#handleRunFullBenchmark" style="-fx-background-color: #3700b3; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 15; -fx-background-radius: 5;"/>

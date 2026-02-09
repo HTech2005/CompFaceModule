@@ -26,4 +26,26 @@ public class NormalizeVector {
 
         return res;
     }
+
+    /**
+     * Normalise un vecteur en norme L2 (norme Euclidienne = 1).
+     */
+    public static double[] normalizeL2(double[] vector) {
+        double sumSq = 0.0;
+        for (double v : vector) sumSq += v * v;
+        double norm = Math.sqrt(sumSq);
+        double[] res = new double[vector.length];
+        if (norm > 1e-12) {
+            for (int i = 0; i < vector.length; i++) res[i] = vector[i] / norm;
+        } else {
+            System.arraycopy(vector, 0, res, 0, vector.length);
+        }
+        return res;
+    }
+
+    /**
+     * Normalise un vecteur pour que sa norme L2 soit 1 (Euclidienne).
+     * Si la norme est nulle, retourne une copie du vecteur original.
+     */
+    // duplicate removed — single normalizeL2 implementation kept above
 }

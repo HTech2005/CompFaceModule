@@ -2,6 +2,18 @@ package tech.HTECH;
 
 public class Decision {
 
+    // Public configuration constants so UI and other modules use the same values
+    // Candidate configuration from grid search
+    public static final double THRESHOLD = 61.5; // Aligné sur la documentation technique
+    
+    // Diviseur restauré pour LBP+Histogramme
+    // Valeur optimale: 0.065
+    public static final double EUCLIDEAN_DIVISOR = 0.065; 
+    
+    public static double W_CHI = 0.4;
+    public static double W_COS = 0.4;
+    public static double W_EUCL = 0.2;
+
     public enum DecisionMode {
         CHI_SQUARE("Chi-Carré seul"),
         EUCLIDEAN("Distance Euclidienne seule"),
@@ -23,22 +35,20 @@ public class Decision {
     }
 
     public static boolean dec(double distChi2, double cosineSim, double distEucl, DecisionMode mode) {
-        double scoreChi2 = (1.0 - (distChi2 / 2.0)) * 100.0;
-        double scoreCos = cosineSim * 100.0;
-        double scoreEucl = Math.max(0.0, (1.0 - (distEucl / 0.065)) * 100.0);
-
+        double scoreChi2 = Math.max(0.0, (1.0 - (distChi2 / 2.0)) * 100.0);
+        double scoreCos = Math.max(0.0, Math.min(100.0, cosineSim * 100.0));
+        double scoreEucl = Math.max(0.0, (1.0 - (distEucl / EUCLIDEAN_DIVISOR)) * 100.0);
         switch (mode) {
             case CHI_SQUARE:
-                return scoreChi2 >= 61.5; // Seuil aligné sur le global par défaut
+                return scoreChi2 >= THRESHOLD;
             case COSINE:
-                return scoreCos >= 61.5;
+                return scoreCos >= THRESHOLD;
             case EUCLIDEAN:
-                return scoreEucl >= 61.5;
+                return scoreEucl >= THRESHOLD;
             case TRIPLE_FUSION:
             default:
-                // Texture (30%) + Cosinus (60%) + Euclidien (10%)
-                double globalScore = (scoreCos * 0.6) + (scoreChi2 * 0.3) + (scoreEucl * 0.1);
-                return globalScore >= 61.5;
+                double globalScore = (scoreChi2 * W_CHI) + (scoreCos * W_COS) + (scoreEucl * W_EUCL);
+                return globalScore >= THRESHOLD;
         }
     }
 }

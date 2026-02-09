@@ -29,7 +29,11 @@ public class FaceDetection {
         Mat image = opencv_imgcodecs.imread(imagePath);
         if (image == null || image.empty())
             return null;
-        return detectFaceMat(image);
+        try {
+            return detectFaceMat(image);
+        } finally {
+            image.release(); // CRITIQUE: Libération de l'image chargée
+        }
     }
 
     public static Mat detectFaceMat(Mat image) {
@@ -39,13 +43,13 @@ public class FaceDetection {
 
         // Convertir en gris
         Mat gray = new Mat();
+        RectVector faces = new RectVector();
         try {
             opencv_imgproc.cvtColor(image, gray, opencv_imgproc.COLOR_BGR2GRAY);
 
             // --- CLAHE retiré ici pour éviter le Double-CLAHE qui détruit la texture ---
 
             // Détecter les visages (50x50 suffit pour le temps réel)
-            RectVector faces = new RectVector();
             classifier.detectMultiScale(gray, faces, 1.1, 4, 0, new Size(50, 50), new Size(0, 0));
 
             if (faces.size() == 0)
@@ -53,20 +57,24 @@ public class FaceDetection {
 
             // Trouver le visage avec la plus grande dimension
             Rect largestFace = faces.get(0);
-            long maxArea = largestFace.width() * largestFace.height();
+            long maxArea = (long) largestFace.width() * largestFace.height();
 
             for (long i = 1; i < faces.size(); i++) {
-                Rect r = faces.get(i);
-                long area = r.width() * r.height();
-                if (area > maxArea) {
-                    largestFace = r;
-                    maxArea = area;
+                try (Rect r = faces.get(i)) {
+                    long area = (long) r.width() * r.height();
+                    if (area > maxArea) {
+                        largestFace.close(); // Libérer l'ancien long
+                        largestFace = r;
+                        maxArea = area;
+                    } else {
+                        r.close(); // Libérer si ce n'est pas le plus grand
+                    }
                 }
             }
 
-            // Recadrage interne : Réduire de 15%
-            int paddingW = (int) (largestFace.width() * 0.10);
-            int paddingH = (int) (largestFace.height() * 0.10);
+            // Recadrage interne : Réduire de 15% (Aligné sur README)
+            int paddingW = (int) (largestFace.width() * 0.15);
+            int paddingH = (int) (largestFace.height() * 0.15);
 
             Rect coreFace = new Rect(
                     largestFace.x() + paddingW,
@@ -75,13 +83,20 @@ public class FaceDetection {
                     Math.max(1, largestFace.height() - (2 * paddingH)));
 
             // Extraire le "cœur" du visage
-            return new Mat(image, coreFace).clone();
+            Mat face = new Mat(image, coreFace).clone();
+            
+            // Clean-up
+            coreFace.close();
+            largestFace.close();
+
+            return face;
 
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         } finally {
             gray.release();
+            faces.close(); // CRITIQUE: Libération de la mémoire native
         }
     }
 }

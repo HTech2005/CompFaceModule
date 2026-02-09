@@ -1,0 +1,48 @@
+% IEEEtran article generated from project notes
+\documentclass[conference]{IEEEtran}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\title{Reconnaissance faciale par LBP et fusion de similarités}
+\author{\IEEEauthorblockN{Equipe de développement}
+\IEEEauthorblockA{Projet CompFaceModule}}
+\date{\today}
+\begin{document}
+\maketitle
+\begin{abstract}
+Cet article décrit une chaîne complète de reconnaissance faciale implémentée en Java basée sur l'opérateur Local Binary Patterns (LBP), histogrammes par blocs, fusion de mesures de similarité et décision par seuil optimisé via ROC.
+\end{abstract}
+\section{Introduction}
+La reconnaissance faciale automatique repose sur détection, alignement, extraction et comparaison. Nous présentons ici une implémentation LBP + fusion de similarités.
+\section{Méthodes}
+\subsection{Détection et prétraitement}
+Détection par cascades Haar (OpenCV). Conversion en niveaux de gris, redimensionnement, égalisation globale/locale si nécessaire.
+\subsection{Extraction LBP}
+Opérateur LBP et partition en grille de blocs. Histogrammes par bloc concaténés en vecteur final.
+\subsection{Normalisation et mesures}
+Normalisation L1/L2, distances: chi-deux, cosinus (transformée), euclidienne, fusion linéaire $S_{fusion}=w_1\chi^2+w_2S_{cos}+w_3d_2$.
+\section{Protocole expérimental}
+Benchmark leave-one-out séquentiel (extraction .feat sur disque puis comparaison en flux). Mesures: ROC, AUC, F1.
+\section{Résultats}
+AUC ≈ 0.7064. Seuil choisi (max F1) : 61.0.
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.48\textwidth]{target/figures/roc_curve.png}
+\caption{Courbe ROC (AUC).}
+\end{figure}
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.48\textwidth]{target/figures/score_distribution.png}
+\caption{Distribution des scores.}
+\end{figure}
+\section{Discussion et conclusion}
+Voir `article_scientifique_face_recognition.txt` pour le détail et références. Cette implémentation est adaptée à des scénarios modérés; pour des performances supérieures envisager des modèles profonds et un alignement par repères.
+\section*{Références}
+\begin{thebibliography}{1}
+\bibitem{LBP96} T. Ojala et al., Pattern Recognition, 1996.
+\bibitem{Viola01} P. Viola, M. Jones, CVPR, 2001.
+\end{thebibliography}
+\end{document}

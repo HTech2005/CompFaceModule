@@ -23,15 +23,9 @@ public class LBP {
                 for (int k = 0; k < 8; k++) {
                     int nx = i + voisin[k][0];
                     int ny = j + voisin[k][1];
-                    int s = 0;
                     int intensity = ip.getPixel(nx, ny);
-
-                    if ((intensity - center) >= 0)
-                        s = 1;
-                    else
-                        s = 0;
-
-                    som = (int) (som + s * Math.pow(2, (double) k));
+                    int s = (intensity - center) >= 0 ? 1 : 0;
+                    som |= (s << k);
                 }
                 TLPB[j][i] = som;
             }

@@ -8,28 +8,22 @@ public class Histogram {
         int[] hist = new int[256];
         int width = ip.getWidth();
         int height = ip.getHeight();
-        int cpt = 0;
 
-        for (int k = 0; k <= 255; k++) {
-
-            for (int j = 0; j < height; j++) {
-                for (int i = 0; i < width; i++) {
-
-                    int intensity = ip.getPixel(i, j);
-
-                    if (intensity == k)
-                        cpt++;
-                }
+        // Single-pass counting O(n*m)
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int intensity = ip.getPixel(x, y);
+                if (intensity < 0) intensity = 0;
+                else if (intensity > 255) intensity = 255;
+                hist[intensity]++;
             }
-
-            hist[k] = cpt;
-            cpt = 0;
-
         }
 
         double[] H = new double[256];
-        for (int k = 0; k <= 255; k++) {
-            H[k] = hist[k] / (width * height);
+        double total = (double) (width * height);
+        if (total <= 0) return H;
+        for (int k = 0; k < 256; k++) {
+            H[k] = hist[k] / total;
         }
 
         return H;
@@ -63,6 +57,8 @@ public class Histogram {
                 for (int y = startY; y < endY; y++) {
                     for (int x = startX; x < endX; x++) {
                         int intensity = ip.getPixel(x, y);
+                        if (intensity < 0) intensity = 0;
+                        else if (intensity > 255) intensity = 255;
                         cellCounts[intensity]++;
                         pixelsInCell++;
                     }

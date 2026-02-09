@@ -40,7 +40,8 @@ public class BenchmarkController {
     @FXML private LineChart<Number, Number> chartROC;
     @FXML private LineChart<Number, Number> chartErrorRates;
     @FXML private Button btnRunBenchmark, btnRunFullBenchmark;
-    @FXML private ComboBox<tech.HTECH.Decision.DecisionMode> comboMetric;
+    @FXML private Slider sliderThreshold;
+    @FXML private TextField txtThreshold;
 
     private final BenchmarkService benchmarkService = new BenchmarkService();
     private final ObservableList<BenchmarkService.BenchmarkResult> resultList = FXCollections.observableArrayList();
@@ -78,30 +79,28 @@ public class BenchmarkController {
         sortedData.comparatorProperty().bind(tableResults.comparatorProperty());
         tableResults.setItems(sortedData);
 
-        // Initialisation de la combo des métriques
-        comboMetric.setItems(FXCollections.observableArrayList(tech.HTECH.Decision.DecisionMode.values()));
-        comboMetric.setValue(tech.HTECH.Decision.DecisionMode.TRIPLE_FUSION);
-        comboMetric.setCellFactory(lv -> new ListCell<>() {
-            @Override protected void updateItem(tech.HTECH.Decision.DecisionMode item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty ? null : item.getLabel());
-            }
-        });
-        comboMetric.setButtonCell(new ListCell<>() {
-            @Override protected void updateItem(tech.HTECH.Decision.DecisionMode item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty ? null : item.getLabel());
-            }
-        });
-
-        // Re-analyser les résultats existants si le mode change
-        comboMetric.valueProperty().addListener((obs, oldVal, newVal) -> {
+        // Initialisation du slider de seuil
+        sliderThreshold.setValue(tech.HTECH.Decision.THRESHOLD);
+        txtThreshold.setText(String.format("%.1f", tech.HTECH.Decision.THRESHOLD));
+        
+        // Listener pour ajustement dynamique du seuil (slider -> textfield)
+        sliderThreshold.valueProperty().addListener((obs, oldVal, newVal) -> {
+            double threshold = newVal.doubleValue();
+            txtThreshold.setText(String.format("%.1f", threshold));
             if (!resultList.isEmpty()) {
-                // Pour une exploration dynamique, on recalcule les statuts sur la liste actuelle
-                // Mais runFullAnalysis est plus précis car il repasse par FaceService.
-                // Ici on va juste rafraîchir les vues car les objets BenchmarkResult ont déjà les scores.
-                // Note: La décision et le statut doivent être recalculés.
-                refreshBenchmarkResults(newVal);
+                refreshBenchmarkResultsWithThreshold(threshold);
+            }
+        });
+        
+        // Listener pour saisie manuelle (textfield -> slider)
+        txtThreshold.textProperty().addListener((obs, oldVal, newVal) -> {
+            try {
+                double value = Double.parseDouble(newVal);
+                if (value >= 30 && value <= 90) {
+                    sliderThreshold.setValue(value);
+                }
+            } catch (NumberFormatException e) {
+                // Ignorer les valeurs invalides
             }
         });
         
@@ -143,8 +142,8 @@ public class BenchmarkController {
         File target = fileChooser.showOpenDialog(lblTotal.getScene().getWindow());
 
         if (target != null) {
-            tech.HTECH.Decision.DecisionMode mode = comboMetric.getValue();
-            List<BenchmarkService.BenchmarkResult> results = benchmarkService.runAnalysis(target, mode);
+            // Toujours utiliser Triple Fusion
+            List<BenchmarkService.BenchmarkResult> results = benchmarkService.runAnalysis(target, tech.HTECH.Decision.DecisionMode.TRIPLE_FUSION);
             if (results.isEmpty()) {
                 new Alert(Alert.AlertType.ERROR, "Aucun visage détecté.").show();
                 return;
@@ -159,18 +158,10 @@ public class BenchmarkController {
         }
     }
 
-    private void refreshBenchmarkResults(tech.HTECH.Decision.DecisionMode mode) {
-        double threshold = 61.5;
+    private void refreshBenchmarkResultsWithThreshold(double threshold) {
         for (BenchmarkService.BenchmarkResult r : resultList) {
-            double currentScore;
-            switch (mode) {
-                case CHI_SQUARE: currentScore = r.getChi2(); break;
-                case EUCLIDEAN: currentScore = r.getEucl(); break;
-                case COSINE: currentScore = r.getCos(); break;
-                case TRIPLE_FUSION:
-                default: currentScore = r.getGlobal(); break;
-            }
-            
+            // Toujours utiliser le score global (Triple Fusion)
+            double currentScore = r.getGlobal();
             r.setActiveScore(currentScore);
             boolean decision = currentScore >= threshold;
             r.setDecision(decision);
@@ -227,8 +218,8 @@ public class BenchmarkController {
         javafx.concurrent.Task<List<BenchmarkService.BenchmarkResult>> task = new javafx.concurrent.Task<>() {
             @Override
             protected List<BenchmarkService.BenchmarkResult> call() {
-                tech.HTECH.Decision.DecisionMode mode = comboMetric.getValue();
-                return benchmarkService.runFullAnalysis(mode, (completed, total) -> {
+                // Toujours utiliser Triple Fusion
+                return benchmarkService.runFullAnalysis(tech.HTECH.Decision.DecisionMode.TRIPLE_FUSION, (completed, total) -> {
                     updateProgress(completed, total);
                     javafx.application.Platform.runLater(() -> {
                         double p = (double) completed / total;
@@ -281,11 +272,14 @@ public class BenchmarkController {
         double far = totalImpostors > 0 ? (double) fp / totalImpostors * 100 : 0;
         double frr = totalGenuines > 0 ? (double) fn / totalGenuines * 100 : 0;
         
-        double recall = totalGenuines > 0 ? (double) vp / totalGenuines * 100 : 0;
-        double tnr = totalImpostors > 0 ? (double) vn / totalImpostors * 100 : 0;
-        double precision = (vp + fp) > 0 ? (double) vp / (vp + fp) * 100 : 0;
-        
-        double f1 = (precision + recall) > 0 ? 2 * (precision * recall) / (precision * 10 / 10 + recall) / 100 : 0; // Simplified
+        double recall = totalGenuines > 0 ? (double) vp / totalGenuines * 100.0 : 0.0;
+        double tnr = totalImpostors > 0 ? (double) vn / totalImpostors * 100.0 : 0.0;
+        double precision = (vp + fp) > 0 ? (double) vp / (vp + fp) * 100.0 : 0.0;
+
+        // precision & recall are currently in percent (0..100). Convert to fractions (0..1)
+        double precisionFrac = precision / 100.0;
+        double recallFrac = recall / 100.0;
+        double f1 = (precisionFrac + recallFrac) > 0.0 ? 2.0 * (precisionFrac * recallFrac) / (precisionFrac + recallFrac) : 0.0;
         
         // Calculate EER
         double eer = calculateEER(results);
@@ -301,28 +295,21 @@ public class BenchmarkController {
     }
 
     private double calculateEER(List<BenchmarkService.BenchmarkResult> results) {
+        // EER basé sur le seuil ACTUEL (pas le point optimal)
+        // EER = (FAR + FRR) / 2 avec le seuil sélectionné
         long totalGenuines = results.stream().filter(this::isTheoreticallySame).count();
         long totalImpostors = results.stream().filter(r -> !isTheoreticallySame(r)).count();
         if (totalGenuines == 0 || totalImpostors == 0) return 0;
 
-        double minDiff = Double.MAX_VALUE;
-        double eerValue = 0;
+        double currentThreshold = sliderThreshold.getValue();
+        
+        long fp = results.stream().filter(r -> !isTheoreticallySame(r) && r.getActiveScore() >= currentThreshold).count();
+        long fn = results.stream().filter(r -> isTheoreticallySame(r) && r.getActiveScore() < currentThreshold).count();
 
-        for (int t = 0; t <= 100; t++) {
-            final int threshold = t;
-            long fp = results.stream().filter(r -> !isTheoreticallySame(r) && r.getActiveScore() >= threshold).count();
-            long fn = results.stream().filter(r -> isTheoreticallySame(r) && r.getActiveScore() < threshold).count();
+        double far = (double) fp / totalImpostors * 100;
+        double frr = (double) fn / totalGenuines * 100;
 
-            double far = (double) fp / totalImpostors * 100;
-            double frr = (double) fn / totalGenuines * 100;
-
-            double diff = Math.abs(far - frr);
-            if (diff < minDiff) {
-                minDiff = diff;
-                eerValue = (far + frr) / 2.0;
-            }
-        }
-        return eerValue;
+        return (far + frr) / 2.0;
     }
 
     private void updateChart(List<BenchmarkService.BenchmarkResult> results) {

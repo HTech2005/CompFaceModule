@@ -1,0 +1,50 @@
+Optimisation de la Reconnaissance Faciale : Approche Hybride LBP-Histogramme
+
+Auteurs : Équipe HTECH
+Date : 9 Février 2026 (Restauré)
+
+RÉSUMÉ
+Cet article présente une méthode robuste de reconnaissance faciale combinant l'analyse de texture locale via les motifs binaires locaux (LBP) et l'analyse globale de distribution d'intensité par histogramme. L'approche utilise une fusion de descripteurs et une décision basée sur une métrique hybride ("Triple Fusion") intégrant les distances du Chi-carré, Cosinus et Euclidienne.
+
+1. INTRODUCTION
+La reconnaissance faciale en conditions non contrôlées reste un défi. Notre approche combine les avantages des descripteurs de texture (LBP) et des descripteurs statistiques (Histogrammes).
+
+2. MÉTHODOLOGIE
+
+2.1 Prétraitement (CLAHE)
+- Normalisation de l'éclairage par égalisation d'histogramme adaptative.
+- Grille 8x8, Beta=2.0.
+
+2.2 Extraction de Caractéristiques
+
+2.2.1 Motifs Binaires Locaux (LBP)
+- Analyse de texture locale (micro-patterns).
+- Grille 8x8, Rayon R=1, Voisins=8.
+
+2.2.2 Histogramme de Niveaux de Gris
+- Analyse de la distribution d'intensité globale.
+- Grille 8x8.
+
+2.3 Fusion
+- Concaténation des vecteurs LBP et Histogramme.
+- Normalisation du vecteur résultant.
+
+3. ALGORITHME DE DÉCISION : LA TRIPLE FUSION
+
+Pour comparer deux visages A et B, nous calculons trois métriques :
+
+3.1 Distance du Chi-Carré (Chi-2) : 40%
+- Adaptée aux distributions d'histogrammes.
+
+3.2 Similarité Cosinus : 40%
+- Robuste aux variations d'amplitude d'éclairage.
+
+3.3 Distance Euclidienne : 20%
+- Mesure géométrique standard.
+- Diviseur de normalisation : 0.065.
+
+Score Global = (Chi2 * 0.4) + (Cos * 0.4) + (Eucl * 0.2)
+Seuil optimal : 61.5%
+
+4. CONCLUSION
+L'approche LBP + Histogramme offre un excellent compromis entre précision et rapidité, avec une bonne robustesse aux variations d'éclairage grâce au pré-traitement CLAHE et à la métrique Cosinus.

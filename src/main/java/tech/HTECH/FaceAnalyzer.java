@@ -42,7 +42,7 @@ public class FaceAnalyzer {
 
                 // Distance calculation
                 double dx = (rightEye.x() + rightEye.width() / 2.0) - (leftEye.x() + leftEye.width() / 2.0);
-                double dy = (rightEye.y() + rightEye.height() / 2.0) - (leftEye.y() + leftEye.y() / 2.0);
+                double dy = (rightEye.y() + rightEye.height() / 2.0) - (leftEye.y() + leftEye.height() / 2.0);
                 f.eyeDistance = (int) Math.sqrt(dx * dx + dy * dy);
             }
 
@@ -50,13 +50,17 @@ public class FaceAnalyzer {
             int bh = face.height() / 2;
             Mat mouthROI = new Mat(faceROI, new Rect(0, bh, face.width(), bh));
             RectVector mouths = new RectVector();
-            mouthDetector.detectMultiScale(mouthROI, mouths, 1.1, 5, 0, new Size(30, 20), new Size(0, 0));
+            try {
+                mouthDetector.detectMultiScale(mouthROI, mouths, 1.1, 5, 0, new Size(30, 20), new Size(0, 0));
 
-            if (mouths.size() > 0) {
-                Rect m = mouths.get(0);
-                f.mouthWidth = m.width();
-                f.mouthHeight = m.height();
-                f.mouthRect = new int[] { face.x() + m.x(), face.y() + bh + m.y(), m.width(), m.height() };
+                if (mouths.size() > 0) {
+                    Rect m = mouths.get(0);
+                    f.mouthWidth = m.width();
+                    f.mouthHeight = m.height();
+                    f.mouthRect = new int[] { face.x() + m.x(), face.y() + bh + m.y(), m.width(), m.height() };
+                }
+            } finally {
+                try { if (mouthROI != null && !mouthROI.empty()) mouthROI.release(); } catch (Exception ignored) {}
             }
 
             // Heuristic for Nose (since we lack cascade)
@@ -67,6 +71,11 @@ public class FaceAnalyzer {
             f.noseRect = new int[] { face.x() + noseX, face.y() + noseY, f.noseWidth, face.height() / 8 };
 
             results.add(f);
+
+            // Free the ROI Mat to avoid memory leaks
+            try {
+                if (faceROI != null && !faceROI.empty()) faceROI.release();
+            } catch (Exception ignored) {}
         }
         return results;
     }

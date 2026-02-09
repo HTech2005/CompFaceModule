@@ -13,20 +13,22 @@ public class Pretraitement {
     public static ImageProcessor pt(ImageProcessor ip) {
         // 1. Convertir en niveaux de gris et redimensionner
         ip = ip.convertToByte(true);
-        ip = ip.resize(130, 130);
+        ip = ip.resize(128, 128);
         
         // Filtre Médian désactivé (trop lissant pour LBP)
         // ip.medianFilter();
         
         // Très léger flou pour supprimer le bruit sans affecter la texture 
-        ip.blurGaussian(0.4);
+        ip.blurGaussian(0.8);
 
         // 2. Appliquer CLAHE via OpenCV pour une robustesse maximale à l'éclairage
+        // RÉACTIVÉ
         try {
             Mat mat = OpenCVUtils.imageProcessorToMat(ip);
             Mat claheMat = new Mat();
-            org.bytedeco.opencv.opencv_imgproc.CLAHE clahe = opencv_imgproc.createCLAHE(2.0, new Size(8, 8));
-            clahe.apply(mat, claheMat);
+            try (org.bytedeco.opencv.opencv_imgproc.CLAHE clahe = opencv_imgproc.createCLAHE(2.0, new Size(8, 8))) {
+                clahe.apply(mat, claheMat);
+            }
 
             // Re-convertir en ImageProcessor
             ip = OpenCVUtils.matToImageProcessor(claheMat);
@@ -37,6 +39,9 @@ public class Pretraitement {
             // Fallback sur normalisation linéaire si OpenCV échoue
             linearNormalize(ip);
         }
+        
+        // La normalisation linéaire est gérée dans le catch en cas d'échec
+        // linearNormalize(ip);
 
         return ip;
     }

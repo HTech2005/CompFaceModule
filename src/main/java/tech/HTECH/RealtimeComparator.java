@@ -35,234 +35,117 @@ public class RealtimeComparator {
 
         org.bytedeco.opencv.opencv_videoio.VideoCapture cap = new org.bytedeco.opencv.opencv_videoio.VideoCapture(0);
         if (!cap.isOpened()) {
-            System.err.println("Impossible d'ouvrir la caméra !");
+            System.err.println("Impossible d'ouvrir la camera !");
             return;
         }
 
-        // "FLASH" : Forcer la luminosité au maximum
         try {
             cap.set(org.bytedeco.opencv.global.opencv_videoio.CAP_PROP_BRIGHTNESS, 255);
             cap.set(org.bytedeco.opencv.global.opencv_videoio.CAP_PROP_GAIN, 255);
         } catch (Exception e) {
-            System.out.println("Avertissement: Impossible de régler la luminosité matérielle.");
-        }
-
-        CascadeClassifier faceDetector = new CascadeClassifier(cascadePath);
-        if (faceDetector.isNull() || faceDetector.empty()) {
-            System.err.println("Cascade non chargée : " + cascadePath);
-            cap.release();
-            return;
+            System.out.println("Avertissement: Impossible de regler la luminosite.");
         }
 
         Mat frame = new Mat();
         Mat gray = new Mat();
         OpenCVFrameConverter.ToMat converter = new OpenCVFrameConverter.ToMat();
-        try {
+        
+        List<Double> scoresGlobaux = new ArrayList<>();
+        List<Double> scoresEuclidiensBruts = new ArrayList<>();
+        List<Double> scoresCosinus = new ArrayList<>();
+        int totalFramesProcessed = 0;
+
+        try (CascadeClassifier faceDetector = new CascadeClassifier(cascadePath)) {
+            if (faceDetector.isNull() || faceDetector.empty()) {
+                System.err.println("Cascade non chargee : " + cascadePath);
+                cap.release();
+                return;
+            }
+
             CanvasFrame canvas = new CanvasFrame("Scan Facial - 20 secondes", 1.0);
             canvas.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-            // Pour calculer la moyenne
-            List<Double> scoresGlobaux = new ArrayList<>();
-            List<Double> scoresEuclidiensBruts = new ArrayList<>();
-            List<Double> scoresCosinus = new ArrayList<>();
+            try {
+                long stableStartTime = 0;
+                System.out.println("Scan demarre...");
 
-            int totalFramesProcessed = 0;
+                while (canvas.isVisible()) {
+                    if (!cap.read(frame) || frame.empty())
+                        continue;
 
-            long stableStartTime = 0;
-            boolean isStable = false;
+                    org.bytedeco.opencv.global.opencv_core.flip(frame, frame, 1);
 
-            System.out.println("Scan démarré... L'analyse s'arrêtera après 5 secondes de stabilité (>= 50%).");
+                    int width = frame.cols();
+                    int height = frame.rows();
 
-            while (canvas.isVisible()) {
-                if (!cap.read(frame) || frame.empty())
-                    continue;
+                    int boxSize = Math.min(width, height) * 2 / 3;
+                    int x = (width - boxSize) / 2;
+                    int y = (height - boxSize) / 2;
 
-                // Miroir (optionnel mais plus naturel)
-                org.bytedeco.opencv.global.opencv_core.flip(frame, frame, 1);
+                    Scalar guideColor = new Scalar(0, 255, 0, 0);
+                    opencv_imgproc.rectangle(frame, new Point(x, y), new Point(x + boxSize, y + boxSize), guideColor, 2, opencv_imgproc.LINE_AA, 0);
 
-                int width = frame.cols();
-                int height = frame.rows();
+                    opencv_imgproc.cvtColor(frame, gray, opencv_imgproc.COLOR_BGR2GRAY);
+                    opencv_imgproc.equalizeHist(gray, gray);
 
-                // === CADRE CENTRÉ + DESIGN PRO ===
-                int boxSize = Math.min(width, height) * 2 / 3;
-                int x = (width - boxSize) / 2;
-                int y = (height - boxSize) / 2;
+                    try (RectVector faces = new RectVector()) {
+                        faceDetector.detectMultiScale(gray, faces);
+                        boolean faceInZone = false;
 
-                Scalar guideColor = new Scalar(0, 255, 0, 0); // Vert
+                        for (long i = 0; i < faces.size(); i++) {
+                            try (Rect r = faces.get(i)) {
+                                int cx = r.x() + r.width() / 2;
+                                int cy = r.y() + r.height() / 2;
 
-                // Dessin du viseur (Coins seulement pour style "tech")
-                int c = boxSize / 5;
-                int th = 3; // épaisseur
-                opencv_imgproc.line(frame, new Point(x, y), new Point(x + c, y), guideColor, th, opencv_imgproc.LINE_AA,
-                        0);
-                opencv_imgproc.line(frame, new Point(x, y), new Point(x, y + c), guideColor, th, opencv_imgproc.LINE_AA,
-                        0);
+                                if (cx >= x && cx <= x + boxSize && cy >= y && cy <= y + boxSize) {
+                                    faceInZone = true;
+                                    try (Mat faceROI = new Mat(frame, r).clone()) {
+                                        ImageProcessor ip = OpenCVUtils.matToImageProcessor(faceROI);
+                                        ip = Pretraitement.pt(ip);
 
-                opencv_imgproc.line(frame, new Point(x + boxSize, y), new Point(x + boxSize - c, y), guideColor, th,
-                        opencv_imgproc.LINE_AA, 0);
-                opencv_imgproc.line(frame, new Point(x + boxSize, y), new Point(x + boxSize, y + c), guideColor, th,
-                        opencv_imgproc.LINE_AA, 0);
+                                        double[] H = Histogram.histoGrid(ip, 8, 8);
+                                        double[] LBPH = LBP.histogramLBPGrid(LBP.LBP2D(ip), 8, 8);
+                                        double[] Nfused = NormalizeVector.normalize(Fusion.fus(H, LBPH));
 
-                opencv_imgproc.line(frame, new Point(x, y + boxSize), new Point(x + c, y + boxSize), guideColor, th,
-                        opencv_imgproc.LINE_AA, 0);
-                opencv_imgproc.line(frame, new Point(x, y + boxSize), new Point(x, y + boxSize - c), guideColor, th,
-                        opencv_imgproc.LINE_AA, 0);
+                                        double distChi2 = Comparaison.distanceKhiCarre(Nfused, referenceVector);
+                                        double cosSim = Comparaison.similitudeCosinus(Nfused, referenceVector);
+                                        double distEucl = Comparaison.distanceEuclidienne(Nfused, referenceVector);
 
-                opencv_imgproc.line(frame, new Point(x + boxSize, y + boxSize), new Point(x + boxSize - c, y + boxSize),
-                        guideColor, th, opencv_imgproc.LINE_AA, 0);
-                opencv_imgproc.line(frame, new Point(x + boxSize, y + boxSize), new Point(x + boxSize, y + boxSize - c),
-                        guideColor, th, opencv_imgproc.LINE_AA, 0);
+                                        double scoreTexture = Compatibilite.CalculCompatibilite(distChi2);
+                                        double scoreCosinus = cosSim * 100.0;
+                                        double scoreEucl = Math.max(0.0, (1.0 - (distEucl / Decision.EUCLIDEAN_DIVISOR)) * 100.0);
+                                        double scoreGlobal = (scoreTexture * 0.4) + (scoreCosinus * 0.4) + (scoreEucl * 0.2);
 
-                String infoText = "ANALYSE EN COURS...";
-                if (stableStartTime > 0) {
-                    double elapsed = (System.currentTimeMillis() - stableStartTime) / 1000.0;
-                    infoText = String.format("STABILITÉ : %.1f s / 5s", elapsed);
-                }
+                                        if (scoreGlobal >= 50.0) {
+                                            if (stableStartTime == 0) stableStartTime = System.currentTimeMillis();
+                                            if (System.currentTimeMillis() - stableStartTime >= 5000) {
+                                                System.out.println(">>> IDENTITE CONFIRMEE");
+                                                canvas.setVisible(false);
+                                            }
+                                        } else {
+                                            stableStartTime = 0;
+                                        }
 
-                // Centrer le texte
-                int[] baseline = new int[1];
-                Size textSize = opencv_imgproc.getTextSize(infoText, opencv_imgproc.FONT_HERSHEY_SIMPLEX, 0.8, 2,
-                        baseline);
-                Point textOrg = new Point((width - textSize.width()) / 2, 50);
-
-                opencv_imgproc.putText(frame, infoText, textOrg, opencv_imgproc.FONT_HERSHEY_SIMPLEX, 0.8,
-                        new Scalar(255, 255, 255, 0), 2, opencv_imgproc.LINE_AA, false);
-
-                // Détection du visage
-                opencv_imgproc.cvtColor(frame, gray, opencv_imgproc.COLOR_BGR2GRAY);
-                opencv_imgproc.equalizeHist(gray, gray);
-
-                RectVector faces = new RectVector();
-                faceDetector.detectMultiScale(gray, faces);
-
-                boolean faceInZone = false;
-
-                for (long i = 0; i < faces.size(); i++) {
-                    Rect r = faces.get(i);
-                    int cx = r.x() + r.width() / 2;
-                    int cy = r.y() + r.height() / 2;
-
-                    // Vérifier si le centre du visage est bien dans le cadre
-                    if (cx >= x && cx <= x + boxSize && cy >= y && cy <= y + boxSize) {
-                        faceInZone = true;
-
-                        Mat faceROI = new Mat(frame, r).clone();
-                        try {
-                            ImageProcessor ip = OpenCVUtils.matToImageProcessor(faceROI);
-                            ip = Pretraitement.pt(ip);
-
-                            double[] H = Histogram.histoGrid(ip, 8, 8);
-                            double[] LBPH = LBP.histogramLBPGrid(LBP.LBP2D(ip), 8, 8);
-                            double[] fused = Fusion.fus(H, LBPH);
-                            double[] Nfused = NormalizeVector.normalize(fused);
-
-                            double distChi2 = Comparaison.distanceKhiCarre(Nfused, referenceVector);
-                            double cosSim = Comparaison.similitudeCosinus(Nfused, referenceVector);
-                            double distEucl = Comparaison.distanceEuclidienne(Nfused, referenceVector);
-
-                            double scoreTexture = Compatibilite.CalculCompatibilite(distChi2);
-                            double scoreCosinus = cosSim * 100.0;
-                            double scoreEuclidienBrut = Math.max(0.0, (1.0 - (distEucl / 0.035)) * 100.0);
-                            double scoreGlobal = (scoreTexture * 0.4) + (scoreCosinus * 0.4)
-                                    + (scoreEuclidienBrut * 0.2);
-
-                            // --- LOGIQUE DE STABILITÉ ---
-                            if (scoreGlobal >= 50.0) {
-                                if (stableStartTime == 0) stableStartTime = System.currentTimeMillis();
-                                
-                                if (System.currentTimeMillis() - stableStartTime >= 5000) {
-                                    System.out.println(">>> IDENTITÉ CONFIRMÉE (Stable 5s)");
-                                    break; // Sortie de la boucle while
+                                        scoresGlobaux.add(scoreGlobal);
+                                        scoresEuclidiensBruts.add(scoreEucl);
+                                        scoresCosinus.add(scoreCosinus);
+                                        totalFramesProcessed++;
+                                    }
                                 }
-                            } else {
-                                stableStartTime = 0;
                             }
-
-                            // Stockage
-                            scoresGlobaux.add(scoreGlobal);
-                            scoresEuclidiensBruts.add(scoreEuclidienBrut);
-                            scoresCosinus.add(scoreCosinus);
-                            totalFramesProcessed++;
-
-                            // Affichage Temps Réel
-                            boolean isMatch = Decision.dec(distChi2, cosSim, distEucl);
-                            Scalar resultColor = isMatch ? new Scalar(0, 255, 0, 0) : new Scalar(0, 0, 255, 0); // Vert
-                                                                                                                // ou
-                                                                                                                // Rouge
-
-                            // Cadre autour du visage détecté
-                            opencv_imgproc.rectangle(frame, new Point(r.x(), r.y()),
-                                    new Point(r.x() + r.width(), r.y() + r.height()), resultColor, 2,
-                                    opencv_imgproc.LINE_AA,
-                                    0);
-
-                            // Infos
-                            String info1 = String.format("Texture Chi2: %.1f%%", scoreTexture);
-                            String info2 = String.format("Cos: %.1f%%", scoreCosinus);
-                            String info3 = String.format("Global: %.1f%%", scoreGlobal);
-
-                            opencv_imgproc.putText(frame, info1, new Point(r.x(), r.y() - 45),
-                                    opencv_imgproc.FONT_HERSHEY_PLAIN, 1.2, resultColor, 2, opencv_imgproc.LINE_AA,
-                                    false);
-                            opencv_imgproc.putText(frame, info2, new Point(r.x(), r.y() - 25),
-                                    opencv_imgproc.FONT_HERSHEY_PLAIN,
-                                    1.2, resultColor, 2, opencv_imgproc.LINE_AA, false);
-                            opencv_imgproc.putText(frame, info3, new Point(r.x(), r.y() - 5),
-                                    opencv_imgproc.FONT_HERSHEY_PLAIN,
-                                    1.2, resultColor, 2, opencv_imgproc.LINE_AA, false);
-                        } finally {
-                            faceROI.release();
                         }
                     }
+                    canvas.showImage(converter.convert(frame));
                 }
-
-                if (!faceInZone) {
-                    String msg = "PLACEZ VOTRE VISAGE AU CENTRE";
-                    Size s = opencv_imgproc.getTextSize(msg, opencv_imgproc.FONT_HERSHEY_SIMPLEX, 0.8, 2, baseline);
-                    opencv_imgproc.putText(frame, msg, new Point((width - s.width()) / 2, height - 50),
-                            opencv_imgproc.FONT_HERSHEY_SIMPLEX, 0.8, new Scalar(0, 255, 255, 0), 2,
-                            opencv_imgproc.LINE_AA,
-                            false);
-                }
-
-                canvas.showImage(converter.convert(frame));
+            } finally {
+                canvas.dispose();
             }
-
-            cap.release();
-            canvas.dispose();
-
-            // === RÉSULTAT FINAL ===
-            double avgGlobal = scoresGlobaux.stream().mapToDouble(d -> d).average().orElse(0.0);
-            double avgEucl = scoresEuclidiensBruts.stream().mapToDouble(d -> d).average().orElse(0.0);
-            double avgCos = scoresCosinus.stream().mapToDouble(d -> d).average().orElse(0.0);
-
-            System.out.println("\n" + "═".repeat(60));
-            System.out.println("           RÉSULTAT DU SCAN");
-            System.out.println("═".repeat(60));
-
-            if (totalFramesProcessed == 0) {
-                System.out.println("ERREUR : Aucun visage analysé.");
-            } else {
-                System.out.printf("Images analysées : %d\n", totalFramesProcessed);
-                System.out.println("------------------------------------------------------------");
-                System.out.printf("SCORE MOYEN GLOBAL    : %.2f%%\n", avgGlobal);
-                System.out.printf("TAUX MOYEN EUCLIDIEN  : %.2f%%\n", avgEucl);
-                System.out.printf("SCORE MOYEN COSINUS   : %.2f%%\n", avgCos);
-                System.out.println("------------------------------------------------------------");
-
-                // Décision basée sur le Cosinus (plus robuste)
-                if (avgCos >= 95.0) {
-                    System.out.println(">>> ACCÈS AUTORISÉ (Identité confirmée)");
-                } else if (avgCos >= 85.0) {
-                    System.out.println(">>> INCERTAIN (Ressemblance partielle)");
-                } else {
-                    System.out.println(">>> ACCÈS REFUSÉ (Visage inconnu)");
-                }
-            }
-            System.out.println("═".repeat(60));
-        } finally {
-            frame.release();
-            gray.release();
         }
+
+        cap.release();
+        frame.release();
+        gray.release();
+
+        System.out.println("Scan termine. " + totalFramesProcessed + " images traitees.");
     }
 }

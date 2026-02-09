@@ -5,12 +5,15 @@ import org.bytedeco.opencv.opencv_core.Mat;
 import tech.HTECH.*;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Service principal de reconnaissance faciale.
+ * ROLLBACK VERSION: Retour à la méthode éprouvée LBP + Histogramme pour corriger le FRR 100%.
+ */
 public class FaceService {
-    // Cache statique pour éviter de recharger la BDD à chaque changement de vue
+    // Cache statique
     private static final Map<String, double[]> databaseFeatures = new ConcurrentHashMap<>();
     private static volatile boolean isLoaded = false;
     private static volatile boolean indexing = false;
@@ -33,48 +36,76 @@ public class FaceService {
     public synchronized void reloadDatabase() {
         if (indexing) return;
         indexing = true;
-        System.out.println("Indexation de la base de données (src/main/bdd) en arrière-plan...");
+        System.out.println(">>> Démarrage Indexation : Mode LBP + Histogramme (Restauré) <<<");
         databaseFeatures.clear();
+
         File bddDir = new File("src/main/bdd");
         if (bddDir.exists() && bddDir.isDirectory()) {
             File[] files = bddDir.listFiles((dir, name) -> name.toLowerCase().matches(".*\\.(jpg|jpeg|png)$"));
-            if (files != null) {
+
+            if (files != null && files.length > 0) {
+                int count = 0;
                 for (File f : files) {
                     indexFile(f);
+                    count++;
+                    if (count % 10 == 0) System.gc();
                 }
+            } else {
+                System.out.println("Aucun fichier image trouvé dans src/main/bdd");
             }
+        } else {
+            System.err.println("Dossier src/main/bdd introuvable !");
         }
+
         indexing = false;
         isLoaded = true;
         System.out.println("Indexation terminée. " + databaseFeatures.size() + " visages chargés.");
     }
 
     public void indexFile(File f) {
+        Mat face = null;
         try {
-            Mat face = FaceDetection.detectFace(f.getAbsolutePath());
+            face = FaceDetection.detectFace(f.getAbsolutePath());
             if (face != null) {
-                ImageProcessor ip = Pretraitement.pt(OpenCVUtils.matToImageProcessor(face));
-                double[] h = Histogram.histoGrid(ip, 8, 8);
-                double[] lbp = LBP.histogramLBPGrid(LBP.LBP2D(ip), 8, 8);
-                double[] fusion = Fusion.fus(h, lbp);
-                double[] normalized = NormalizeVector.normalize(fusion);
-                databaseFeatures.put(f.getName(), normalized);
-                System.out.println("Indexé: " + f.getName());
+                double[] features = extractFeatures(face);
+                if (features != null) {
+                    databaseFeatures.put(f.getName(), features);
+                    System.out.println("Indexé: " + f.getName());
+                }
             } else {
                 System.err.println("Visage non détecté dans: " + f.getName());
             }
         } catch (Exception ex) {
             System.err.println("Erreur indexation " + f.getName() + ": " + ex.getMessage());
+        } finally {
+            if (face != null) face.release();
         }
     }
 
-    public Map<String, double[]> getDatabaseFeatures() {
-        return databaseFeatures;
+    /**
+     * Extraction Caractéristiques : LBP + Histogramme
+     */
+    public double[] extractFeatures(Mat face) {
+        if (face == null) return null;
+
+        // 1. Prétraitement
+        ImageProcessor ipRaw = OpenCVUtils.matToImageProcessor(face);
+        ImageProcessor ip = Pretraitement.pt(ipRaw);
+
+        // 2. Histogramme (Structure) - 8x8
+        double[] hist = Histogram.histoGrid(ip, 8, 8);
+
+        // 3. LBP (Texture) - 8x8
+        double[] lbp = LBP.histogramLBPGrid(LBP.LBP2D(ip), 8, 8);
+
+        // 4. Fusion
+        double[] fusion = Fusion.fus(hist, lbp);
+        
+        // 5. Normalisation
+        return NormalizeVector.normalize(fusion);
     }
-    public void removeFile(String fileName) {
-        databaseFeatures.remove(fileName);
-        System.out.println("Supprimé du cache: " + fileName);
-    }
+
+    // --- LOGIQUE DE COMPARAISON RESTAURÉE ---
 
     public ComparisonResult compareFaces(Mat face1, Mat face2) {
         return compareFaces(face1, face2, Decision.DecisionMode.TRIPLE_FUSION);
@@ -84,15 +115,6 @@ public class FaceService {
         double[] N1 = extractFeatures(face1);
         double[] N2 = extractFeatures(face2);
         return compareFeatures(N1, N2, mode);
-    }
-
-    public double[] extractFeatures(Mat face) {
-        if (face == null) return null;
-        ImageProcessor ip = Pretraitement.pt(OpenCVUtils.matToImageProcessor(face));
-        double[] h = Histogram.histoGrid(ip, 8, 8);
-        double[] lbp = LBP.histogramLBPGrid(LBP.LBP2D(ip), 8, 8);
-        double[] fusion = Fusion.fus(h, lbp);
-        return NormalizeVector.normalize(fusion);
     }
 
     public ComparisonResult compareFeatures(double[] N1, double[] N2) {
@@ -107,12 +129,12 @@ public class FaceService {
         double distEucl = Comparaison.distanceEuclidienne(N1, N2);
 
         double scoreTexture = Compatibilite.CalculCompatibilite(distChi2);
-        double scoreEucl = Math.max(0.0, (1.0 - (distEucl / 0.065)) * 100.0);
-        double scoreCos = cos * 100.0;
+        double scoreEucl = Math.max(0.0, (1.0 - (distEucl / Decision.EUCLIDEAN_DIVISOR)) * 100.0);
+        double scoreCos = cos * 100.0; 
 
-        // Poids optimisés (Recalib 8.0) : Cosinus (60%) + Texture (30%) + Géo (10%)
-        // Le Cosinus est beaucoup plus robuste aux variations de pose et d'éclairage
-        double globalScore = (scoreCos * 0.6) + (scoreTexture * 0.3) + (scoreEucl * 0.1);
+        double globalScore = (scoreTexture * Decision.W_CHI) + 
+                             (scoreCos * Decision.W_COS) + 
+                             (scoreEucl * Decision.W_EUCL);
 
         double activeScore;
         switch (mode) {
@@ -139,203 +161,92 @@ public class FaceService {
     }
 
     public RecognitionResult recognizeFace(Mat face, Decision.DecisionMode mode) {
-        if (face == null)
-            return null;
+        if (face == null) return null;
 
-        ImageProcessor ip = Pretraitement.pt(OpenCVUtils.matToImageProcessor(face));
-        double[] h = Histogram.histoGrid(ip, 8, 8);
-        double[] lbp = LBP.histogramLBPGrid(LBP.LBP2D(ip), 8, 8);
-        double[] fusion = Fusion.fus(h, lbp);
-        double[] features = NormalizeVector.normalize(fusion);
-
+        double[] features = extractFeatures(face);
+        
         String bestMatchFile = null;
         double bestScore = -1.0;
-        double threshold = 61.5; // Seuil recalibré à 61.5% (Recalib 6.0)
 
         for (Map.Entry<String, double[]> entry : databaseFeatures.entrySet()) {
-            double distChi2 = Comparaison.distanceKhiCarre(features, entry.getValue());
-            double cosSim = Comparaison.similitudeCosinus(features, entry.getValue());
-            double distEucl = Comparaison.distanceEuclidienne(features, entry.getValue());
-
-            double scoreChi2 = Compatibilite.CalculCompatibilite(distChi2);
-            double scoreEucl = Math.max(0.0, (1.0 - (distEucl / 0.065)) * 100.0);
-            double scoreCos = cosSim * 100.0;
-            double globalScore = (scoreCos * 0.6) + (scoreChi2 * 0.3) + (scoreEucl * 0.1);
-
-            double currentScore;
-            switch (mode) {
-                case CHI_SQUARE: currentScore = scoreChi2; break;
-                case EUCLIDEAN: currentScore = scoreEucl; break;
-                case COSINE: currentScore = scoreCos; break;
-                case TRIPLE_FUSION:
-                default: currentScore = globalScore; break;
-            }
-
-            if (currentScore > bestScore) {
-                bestScore = currentScore;
+            ComparisonResult comp = compareFeatures(features, entry.getValue(), mode); 
+            
+            if (comp.getActiveScore() > bestScore) {
+                bestScore = comp.getActiveScore();
                 bestMatchFile = entry.getKey();
             }
         }
 
-        System.out.println(
-                "DEBUG TR: Meilleur score (" + mode + ") trouvé = " + String.format("%.2f%%", bestScore) + " pour " + bestMatchFile);
+        System.out.println("DEBUG: Best=" + String.format("%.2f%%", bestScore) + " File=" + bestMatchFile);
 
         RecognitionResult result = new RecognitionResult();
-        result.setFound(bestMatchFile != null && bestScore >= threshold);
+        result.setFound(bestMatchFile != null && bestScore >= Decision.THRESHOLD);
 
         if (bestMatchFile != null) {
             result.setBestMatch(bestMatchFile.replaceFirst("[.][^.]+$", ""));
             result.setBestMatchFile(bestMatchFile);
             result.setScore(bestScore);
-            result.setScoreGlobal(bestScore); // Note: might need better clarification for "global" vs "score"
-
-            double[] bestFeatures = databaseFeatures.get(bestMatchFile);
-            double bc2 = Comparaison.distanceKhiCarre(features, bestFeatures);
-            double bcs = Comparaison.similitudeCosinus(features, bestFeatures);
-            double beu = Comparaison.distanceEuclidienne(features, bestFeatures);
-
-            result.setScoreChi2(Compatibilite.CalculCompatibilite(bc2));
-            result.setScoreEuclidien(Math.max(0.0, (1.0 - (beu / 0.065)) * 100.0));
-            result.setScoreCosinus(bcs * 100.0);
-            result.setMatch(Decision.dec(bc2, bcs, beu, mode));
+            result.setScoreGlobal(bestScore);
+            
+            double[] bestFeat = databaseFeatures.get(bestMatchFile);
+            ComparisonResult detailed = compareFeatures(features, bestFeat, mode);
+            
+            result.setScoreChi2(detailed.getScoreChi2());
+            result.setScoreEuclidien(detailed.getScoreEuclidien());
+            result.setScoreCosinus(detailed.getScoreCosinus());
+            result.setMatch(result.isFound());
         }
 
         return result;
     }
 
+    public void removeFile(String fileName) {
+        databaseFeatures.remove(fileName);
+        System.out.println("Supprimé du cache: " + fileName);
+    }
+
+    public Map<String, double[]> getDatabaseFeatures() {
+        return databaseFeatures;
+    }
+
     public static class ComparisonResult {
         private boolean match;
-        private double scoreChi2;
-        private double scoreEuclidien;
-        private double scoreCosinus;
-        private double scoreGlobal;
-        private double activeScore;
-
+        private double scoreChi2, scoreEuclidien, scoreCosinus, scoreGlobal, activeScore;
         public double getActiveScore() { return activeScore; }
-        public void setActiveScore(double activeScore) { this.activeScore = activeScore; }
-
-        public boolean isMatch() {
-            return match;
-        }
-
-        public void setMatch(boolean match) {
-            this.match = match;
-        }
-
-        public double getScoreChi2() {
-            return scoreChi2;
-        }
-
-        public void setScoreChi2(double scoreChi2) {
-            this.scoreChi2 = scoreChi2;
-        }
-
-        public double getScoreEuclidien() {
-            return scoreEuclidien;
-        }
-
-        public void setScoreEuclidien(double scoreEuclidien) {
-            this.scoreEuclidien = scoreEuclidien;
-        }
-
-        public double getScoreCosinus() {
-            return scoreCosinus;
-        }
-
-        public void setScoreCosinus(double scoreCosinus) {
-            this.scoreCosinus = scoreCosinus;
-        }
-
-        public double getScoreGlobal() {
-            return scoreGlobal;
-        }
-
-        public void setScoreGlobal(double scoreGlobal) {
-            this.scoreGlobal = scoreGlobal;
-        }
+        public void setActiveScore(double s) { this.activeScore = s; }
+        public boolean isMatch() { return match; }
+        public void setMatch(boolean m) { this.match = m; }
+        public double getScoreChi2() { return scoreChi2; }
+        public void setScoreChi2(double s) { this.scoreChi2 = s; }
+        public double getScoreEuclidien() { return scoreEuclidien; }
+        public void setScoreEuclidien(double s) { this.scoreEuclidien = s; }
+        public double getScoreCosinus() { return scoreCosinus; }
+        public void setScoreCosinus(double s) { this.scoreCosinus = s; }
+        public double getScoreGlobal() { return scoreGlobal; }
+        public void setScoreGlobal(double s) { this.scoreGlobal = s; }
     }
 
     public static class RecognitionResult {
-        private boolean found;
-        private String bestMatch;
-        private String bestMatchFile;
-        private double score;
-        private double scoreChi2;
-        private double scoreEuclidien;
-        private double scoreCosinus;
-        private double scoreGlobal;
-        private boolean match;
-
-        public boolean isFound() {
-            return found;
-        }
-
-        public void setFound(boolean found) {
-            this.found = found;
-        }
-
-        public String getBestMatch() {
-            return bestMatch;
-        }
-
-        public void setBestMatch(String bestMatch) {
-            this.bestMatch = bestMatch;
-        }
-
-        public String getBestMatchFile() {
-            return bestMatchFile;
-        }
-
-        public void setBestMatchFile(String bestMatchFile) {
-            this.bestMatchFile = bestMatchFile;
-        }
-
-        public double getScore() {
-            return score;
-        }
-
-        public void setScore(double score) {
-            this.score = score;
-        }
-
-        public double getScoreChi2() {
-            return scoreChi2;
-        }
-
-        public void setScoreChi2(double scoreChi2) {
-            this.scoreChi2 = scoreChi2;
-        }
-
-        public double getScoreEuclidien() {
-            return scoreEuclidien;
-        }
-
-        public void setScoreEuclidien(double scoreEuclidien) {
-            this.scoreEuclidien = scoreEuclidien;
-        }
-
-        public double getScoreCosinus() {
-            return scoreCosinus;
-        }
-
-        public void setScoreCosinus(double scoreCosinus) {
-            this.scoreCosinus = scoreCosinus;
-        }
-
-        public double getScoreGlobal() {
-            return scoreGlobal;
-        }
-
-        public void setScoreGlobal(double scoreGlobal) {
-            this.scoreGlobal = scoreGlobal;
-        }
-
-        public boolean isMatch() {
-            return match;
-        }
-
-        public void setMatch(boolean match) {
-            this.match = match;
-        }
+        private boolean found, match;
+        private String bestMatch, bestMatchFile;
+        private double score, scoreChi2, scoreEuclidien, scoreCosinus, scoreGlobal;
+        public boolean isFound() { return found; }
+        public void setFound(boolean f) { this.found = f; }
+        public String getBestMatch() { return bestMatch; }
+        public void setBestMatch(String s) { this.bestMatch = s; }
+        public String getBestMatchFile() { return bestMatchFile; }
+        public void setBestMatchFile(String s) { this.bestMatchFile = s; }
+        public double getScore() { return score; }
+        public void setScore(double s) { this.score = s; }
+        public double getScoreChi2() { return scoreChi2; }
+        public void setScoreChi2(double s) { this.scoreChi2 = s; }
+        public double getScoreEuclidien() { return scoreEuclidien; }
+        public void setScoreEuclidien(double s) { this.scoreEuclidien = s; }
+        public double getScoreCosinus() { return scoreCosinus; }
+        public void setScoreCosinus(double s) { this.scoreCosinus = s; }
+        public double getScoreGlobal() { return scoreGlobal; }
+        public void setScoreGlobal(double s) { this.scoreGlobal = s; }
+        public boolean isMatch() { return match; }
+        public void setMatch(boolean m) { this.match = m; }
     }
 }

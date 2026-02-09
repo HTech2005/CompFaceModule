@@ -93,11 +93,13 @@ public class StepAnalysisController {
 
             ImageProcessor ip = OpenCVUtils.matToImageProcessor(face);
             ip = ip.convertToByte(true);
-            ip = ip.resize(130, 130);
-            setImg(slot, "Gray", OpenCVUtils.matToImage(OpenCVUtils.imageProcessorToMat(ip)));
+            ip = ip.resize(128, 128);
+            Mat tmpGray = OpenCVUtils.imageProcessorToMat(ip);
+            setImg(slot, "Gray", OpenCVUtils.matToImage(tmpGray));
 
             ip.medianFilter();
-            setImg(slot, "Median", OpenCVUtils.matToImage(OpenCVUtils.imageProcessorToMat(ip)));
+            Mat tmpMedian = OpenCVUtils.imageProcessorToMat(ip);
+            setImg(slot, "Median", OpenCVUtils.matToImage(tmpMedian));
 
             Mat mat = OpenCVUtils.imageProcessorToMat(ip);
             Mat claheMat = new Mat();
@@ -107,7 +109,8 @@ public class StepAnalysisController {
             
             ip = OpenCVUtils.matToImageProcessor(claheMat);
             double[][] lbpMap = LBP.LBP2D(ip);
-            setImg(slot, "LBP", OpenCVUtils.matToImage(OpenCVUtils.imageProcessorToMat(LBP.drawLBP(lbpMap))));
+            Mat lbpMat = OpenCVUtils.imageProcessorToMat(LBP.drawLBP(lbpMap));
+            setImg(slot, "LBP", OpenCVUtils.matToImage(lbpMat));
 
             double[] h = Histogram.histoGrid(ip, 8, 8);
             double[] lbpFinal = LBP.histogramLBPGrid(lbpMap, 8, 8);
@@ -118,7 +121,14 @@ public class StepAnalysisController {
             setTxt(slot, "LBP", formatVector(lbpFinal));
             setTxt(slot, "Fusion", formatVector(normalized));
 
-            original.release(); face.release(); mat.release(); claheMat.release();
+            // release Mats created in this method
+            try { if (original != null && !original.empty()) original.release(); } catch (Exception ignored) {}
+            try { if (face != null && !face.empty()) face.release(); } catch (Exception ignored) {}
+            try { if (mat != null && !mat.empty()) mat.release(); } catch (Exception ignored) {}
+            try { if (claheMat != null && !claheMat.empty()) claheMat.release(); } catch (Exception ignored) {}
+            try { if (tmpGray != null && !tmpGray.empty()) tmpGray.release(); } catch (Exception ignored) {}
+            try { if (tmpMedian != null && !tmpMedian.empty()) tmpMedian.release(); } catch (Exception ignored) {}
+            try { if (lbpMat != null && !lbpMat.empty()) lbpMat.release(); } catch (Exception ignored) {}
             
             return normalized;
 
