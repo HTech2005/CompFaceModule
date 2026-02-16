@@ -1,6 +1,6 @@
 # Face Comparison Module (HTECH 2005) - Guide de l'Ingénieur Champion
 
-Ce document propose une immersion profonde dans les mécanismes internes de la plateforme. En tant qu'ingénieur senior, nous détaillons ici le "comment" et le "pourquoi" de chaque calcul, étape par étape.
+Ce document propose une immersion profonde dans les mécanismes internes de la plateforme. En tant qu'ingénieur senior, nous détaillons ici le "comment" et le "pourquoi" de chaque calcul, étape par étape, en nous basant sur l'architecture robuste **LBP + Histogramme**.
 
 ---
 
@@ -23,49 +23,48 @@ L'indexation est le processus qui transforme une image brute en une signature nu
 - **CLAHE (Pizer et al., 1987)** : Contrairement à une égalisation classique, le CLAHE divise l'image en blocs (par défaut $8 \times 8$). Pour chaque bloc, il calcule un histogramme et redistribue les intensités.
 - **Résultat** : Une image où les détails dans les zones sombres sont amplifiés sans créer de bruit dans les zones claires.
 
-### Étape 3 : Extraction Feature-Grid (LBP + HOG)
+### Étape 3 : Extraction Feature-Grid (LBP + Histogramme)
 
-**Action** : Génération des descripteurs (`LBP.java`, `HOG.java`).
+**Action** : Génération des descripteurs (`LBP.java`, `Histogram.java`).
 
 1. **Grille Spatiale** : L'image est découpée en une grille de $8 \times 8$ cellules (64 zones).
 2. **Calcul LBP (Ojala et al., 2002)** : Pour chaque pixel, on compare sa valeur aux 8 voisins. On génère un code binaire de 8 bits ($2^8 = 256$ possibilités). On calcule l'histogramme de ces codes **par cellule**.
-3. **Calcul HOG (Dalal & Triggs, 2005)** : On calcule l'orientation du gradient pour chaque pixel. On regroupe ces orientations dans un histogramme de 9 canaux par cellule.
-4. **Fusion** : Concaténation des 64 histogrammes LBP et 64 histogrammes HOG.
+3. **Calcul de l'Histogramme d'Intensité** : Pour chaque cellule, on calcule la distribution des niveaux de gris (0-255).
+4. **Fusion** : Concaténation des 64 histogrammes LBP et 64 histogrammes d'intensité.
 
-### Étape 4 : Normalisation L2
+### Étape 4 : Normalisation L1
 
-**Action** : Projection sur la sphère unitaire (`NormalizeVector.java`).
+**Action** : Normalisation du vecteur fusionné (`NormalizeVector.java`).
 
-- **Calcul** : Chaque composante $v_i$ du vecteur fusionné $V$ est divisée par la norme euclidienne du vecteur : $v'_i = \frac{v_i}{\sqrt{\sum v_i^2}}$.
-- **Pourquoi ?** Cela rend la signature indépendante de la luminosité globale. Seule la "direction" du vecteur (l'identité) compte.
+- **Calcul** : Chaque composante $v_i$ du vecteur fusionné $V$ est divisée par la somme absolue des valeurs : $v'_i = \frac{v_i}{\sum |v_i|}$.
+- **Pourquoi ?** Cela transforme l'histogramme fusionné en une distribution de probabilité, ce qui est indispensable pour le calcul de la distance Chi-Carré.
 
 ---
 
 ## 🧠 II. La Reconnaissance : Le Verdict des Experts
 
-Lorsqu'on compare deux visages, trois experts mathématiques entrent en collision. C'est la **Triple Fusion d'Expertises** (concept de fusion au niveau des scores, cf. Ross & Jain, 2003).
+Lorsqu'on compare deux visages, trois experts mathématiques entrent en collision. C'est la **Triple Fusion d'Expertises**.
 
 ### 1. L'Expert Statistique : Distance Chi-Carré ($\chi^2$)
 
 **Formule** : $d_{\chi^2}(A,B) = \sum_{i=1}^{n} \frac{(A_i - B_i)^2}{A_i + B_i}$
 
-- **Ce qui est mesuré** : La divergence entre les distributions de texture.
-- **Avantage** : Très sensible aux changements subtils dans les motifs LBP.
-- **Conversion en Score** : $Score_{\chi^2} = (1.0 - \frac{d_{\chi^2}}{2.0}) \times 100$.
+- **Ce qui est mesuré** : La divergence entre les distributions de texture et d'intensité.
+- **Avantage** : C'est la métrique par excellence pour comparer deux histogrammes. Elle pénalise fortement les différences sur les fréquences dominantes.
 
 ### 2. L'Expert Géométrique : Similitude Cosinus
 
 **Formule** : $S_{Cos}(A,B) = \frac{\sum A_i B_i}{\sqrt{\sum A_i^2} \sqrt{\sum B_i^2}}$
 
-- **Ce qui est mesuré** : L'angle entre les deux signatures. S'ils pointent dans la même direction, la similitude est de 1.0 (100%).
-- **Avantage** : **Métrique Reine**. Elle capture la structure globale (HOG) sans être perturbée par l'intensité des gradients.
+- **Ce qui est mesuré** : L'angle entre les deux signatures. Elle capture la corrélation globale entre les motifs de pixels.
+- **Avantage** : Indépendante de l'intensité lumineuse résiduelle.
 
 ### 3. L'Expert Physique : Distance Euclidienne
 
 **Formule** : $d_{Eucl}(A,B) = \sqrt{\sum (A_i - B_i)^2}$
 
-- **Ce qui est mesuré** : La distance directe "à vol d'oiseau" dans l'espace multidimensionnel.
-- **Rôle** : Utilisé comme garde-fou pour pénaliser les vecteurs qui divergent trop physiquement.
+- **Ce qui est mesuré** : La distance directe "à vol d'oiseau".
+- **Rôle** : Servir de garde-fou contre les anomalies statistiques.
 
 ---
 
@@ -73,13 +72,13 @@ Lorsqu'on compare deux visages, trois experts mathématiques entrent en collisio
 
 Le `globalScore` n'est pas une simple moyenne, c'est une décision pondérée (`Decision.java`) :
 
-$$Score_{Global} = (Score_{\chi^2} \times 0.4) + (Score_{Cos} \times 0.4) + (Score_{Eucl} \times 0.2)$$
+$$Score_{Global} = (Score_{Texture} \times 0.4) + (Score_{Cos} \times 0.4) + (Score_{Eucl} \times 0.2)$$
 
 ### Pourquoi ces poids ?
 
-- **40% Chi-Carré** : On donne un poids fort à la texture car c'est elle qui différencie les "vrais jumeaux" ou les visages très similaires.
-- **40% Cosinus** : Poids égal pour la forme géométrique. Si la structure du visage (yeux/nez) ne colle pas, le score doit chuter drastiquement.
-- **20% Euclidienne** : Poids réduit car cette distance est "bruyante" en haute dimension. Elle sert uniquement à confirmer les deux autres.
+- **40% Chi-Carré (Texture)** : On donne un poids fort au Chi-Carré car il est le plus précis pour valider la texture LBP.
+- **40% Cosinus** : Utilisé pour valider la ressemblance globale du profil.
+- **20% Euclidienne** : Poids réduit car cette distance est plus sensible au bruit.
 
 ### Le Verdict
 
@@ -87,15 +86,12 @@ $$Score_{Global} = (Score_{\chi^2} \times 0.4) + (Score_{Cos} \times 0.4) + (Sco
 
 ---
 
-## � IV. Le Benchmark : La Science de l'Erreur
+## 📚 Références Scientifiques Originales
 
-Le bouton "Lancer l'analyse" effectue un cycle de tests massif :
-
-1. **Calcul des Paires** : L'IA compare chaque image de la base à toutes les autres.
-2. **Calcul du FAR (False Acceptance Rate)** : Nombre de fois où l'IA a dit "OUI" pour deux personnes différentes, divisé par le nombre total de comparaisons d'imposteurs.
-3. **Calcul du FRR (False Rejection Rate)** : Nombre de fois où l'IA a dit "NON" pour la même personne, divisé par le nombre total de comparaisons de la même identité.
-4. **Optimisation** : En ajustant le seuil de $61.5\%$, l'ingénieur cherche le point où $FAR \approx FRR$, appelé **EER (Equal Error Rate)**.
+- **T. Ojala et al. (2002)** : LBP pour la classification de texture invariante.
+- **Pizer et al. (1987)** : CLAHE pour l'amélioration adaptative du contraste.
+- **HTECH 2005** : Implémentation du système de Triple Fusion d'Expertises.
 
 ---
 
-_Document rédigé par l'unité de recherche HTECH 2005. Champion, ta plateforme est maintenant une forteresse de précision._
+_Champion, ton projet utilise la combinaison classique et robuste LBP + Histogramme d'Intensité. C'est le standard pour la stabilité._
